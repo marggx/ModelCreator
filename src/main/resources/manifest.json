@@ -1,0 +1,30 @@
+{
+    "Group": "Marggx",
+    "Name": "ModelCombiner",
+    "Version": "0.0.2",
+    "Description": "Building a Plugin for Builders",
+    "Authors": [
+        {
+            "Name": "Marggx",
+            "Email": "hytale@marggx.dev",
+            "Url": "marggx.dev"
+        }
+    ],
+    "Website": "marggx.dev",
+    "Main": "dev.marggx.mcomb.ModelCombinerPlugin",
+    "ServerVersion": "*",
+    "Dependencies": {
+        
+    },
+    "OptionalDependencies": {
+        
+    },
+    "LoadBefore": {
+        
+    },
+    "DisabledByDefault": false,
+    "IncludesAssetPack": true,
+    "SubPlugins": [
+        
+    ]
+}
