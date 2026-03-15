@@ -7,6 +7,7 @@ build/
 
 ### Hytale ###
 run/
+tmp/
 
 ### IntelliJ IDEA ###
 .idea/

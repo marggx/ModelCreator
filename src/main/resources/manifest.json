@@ -1,7 +1,7 @@
 {
     "Group": "Marggx",
-    "Name": "ModelCombiner",
-    "Version": "0.0.2",
+    "Name": "ModelCreator",
+    "Version": "1.0.0",
     "Description": "Building a Plugin for Builders",
     "Authors": [
         {
@@ -11,10 +11,10 @@
         }
     ],
     "Website": "marggx.dev",
-    "Main": "dev.marggx.mcomb.ModelCombinerPlugin",
+    "Main": "dev.marggx.mcreator.ModelCreatorPlugin",
     "ServerVersion": "*",
     "Dependencies": {
-        
+        "Hytale:AssetModule": "*"
     },
     "OptionalDependencies": {
         

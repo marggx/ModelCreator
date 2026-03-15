@@ -1,0 +1,20 @@
+$C = "../Common.ui";
+Group {
+  LayoutMode: Left;
+  Anchor: (Bottom: 4);
+
+  $C.@CheckBox #CheckBox {
+    Value: true;
+  }
+
+
+  Label #Label{
+    Text: "";
+    Anchor: (Right: 30, Left: 11);
+    TooltipText: %mcreator.ui.save.entitiesTooltip;
+    Style: (
+      ...$C.@DefaultLabelStyle,
+      VerticalAlignment: Center
+    );
+  }
+}
