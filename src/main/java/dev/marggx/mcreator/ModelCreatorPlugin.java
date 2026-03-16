@@ -1,15 +1,11 @@
 package dev.marggx.mcreator;
 
 import com.hypixel.hytale.logger.HytaleLogger;
-import com.hypixel.hytale.protocol.Packet;
-import com.hypixel.hytale.server.core.io.PacketHandler;
-import com.hypixel.hytale.server.core.io.adapter.PacketAdapters;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import dev.marggx.mcreator.commands.ModelCreatorCommand;
 
 import javax.annotation.Nonnull;
-import java.util.logging.Level;
 
 public class ModelCreatorPlugin extends JavaPlugin {
 
