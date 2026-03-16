@@ -1,8 +1,8 @@
 # Model Creator
 
-A **Hytale plugin** that allows you to create **Blockymodels directly from in-game entities**.
+A Plugin that allows you to create **Blockymodels directly from in-game entities**.
 
-Instead of building models manually in Blockbench, you can select entities in the world and export them as one **Blockymodel with a single combined texture atlas**.
+Instead of building models manually in Blockbench, you can select entities in the world and export them as **one Blockymodel with a single combined texture**.
 
 ---
 
@@ -13,13 +13,14 @@ Instead of building models manually in Blockbench, you can select entities in th
 3. Type in the name of your new Blockymodel
 4. Unselect entities you don't want to include
 5. Select the pack the Blockymodel should be created in
-6. Select if you to automatically create a new Item with the Blockymodel
+6. Select if you want to automatically create a new Item with the Blockymodel
 
 ---
 
 # Known Issues (Beta)
 
-This plugin is currently **in Beta**.
+### This plugin is currently _in Beta_.
+### If you encounter any issues, please write a comment or hit me up on any [Social Media](#socials).
 
 ### Scaling
 
@@ -52,8 +53,6 @@ Currently working on:
 # Contributing
 
 Suggestions, ideas, and feedback are welcome.
-
-If you encounter bugs or edge cases with specific models, feel free to write a comment or hit me up on any Social Media.
 
 ---
 
