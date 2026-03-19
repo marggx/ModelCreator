@@ -1,5 +1,6 @@
 $C = "../Common.ui";
 $Sounds = "../Sounds.ui";
+$Browser = "PrefabBrowser.ui";
 
 @Red = #ff0000;
 @InputLabel = Label {
@@ -7,158 +8,299 @@ $Sounds = "../Sounds.ui";
   Style: (...$C.@DefaultLabelStyle, VerticalAlignment: Center);
 };
 
-
 @ContainerWidth = 420;
+
 @ContentPadding = 16;
+
 @PanelPadding = 12;
 
 $C.@PageOverlay #MainPage {
   LayoutMode: Middle;
-
   Group {
-    Anchor: (Width: 420);
+    Anchor: (Width: 500);
     LayoutMode: Top;
-
     TabNavigation #Tabs {
       Anchor: (Height: 66, Left: 2, Right: 0);
       Style: $C.@TopTabsStyle;
       SelectedTab: "Selection";
-
       TabButton #Selection {
         Icon: "../Icons/Selection.png";
         TooltipText: %mcreator.ui.save.tabSelection;
         Id: "Selection";
       }
-
       TabButton #Prefab {
         Icon: "../Icons/Prefab.png";
         TooltipText: %mcreator.ui.save.tabPrefab;
         Id: "Prefab";
       }
-
     }
   }
-
   Group #Main {
-        Anchor: (Width: 420);
-
+    Anchor: (Width: 500);
     $C.@Container #Selection {
-        Visible: true;
-
-        #Title {
-          $C.@Title {
-            @Text = %mcreator.ui.save.selectionTitle;
-          }
+      Visible: true;
+      #Title {
+        $C.@Title {
+          @Text = %mcreator.ui.save.selectionTitle;
         }
-        #Content {
+      }
+      #Content {
+        LayoutMode: Top;
+        Padding: (Full: @ContentPadding);
+        Label #SelectionNotification {
+          Anchor: (Bottom: 0);
+          Padding: (Bottom: 8);
+          Visible: false;
+          Style: (FontSize: 16, TextColor: @Red, Wrap: true);
+          Text: "";
+        }
+        Group #Settings {
           LayoutMode: Top;
-          Padding: (Full: @ContentPadding);
-          Label #SelectionNotification {
-            Anchor: (Bottom: 0);
-            Padding: (Bottom: 8);
-            Visible: false;
-            Style: (FontSize: 16, TextColor: @Red, Wrap: true);
-            Text: "Test";
-          }
-          Group #Settings {
-            LayoutMode: Top;
-            Anchor: (Bottom: 0);
-            Group #Name {
-              LayoutMode: Left;
-              Anchor: (Height: 35, Bottom: 16);
-              Label {
-                Text: %mcreator.ui.save.nameLabel;
-                Anchor: (Left: 0, Top: 8);
-                Style: $C.@DefaultLabelStyle;
-              }
-              $C.@TextField #NameInput {
-                @Anchor = (Left: 8, Right: 0);
-                FlexWeight: 1;
-                MaxLength: 1024;
-                PlaceholderText: %mcreator.ui.save.nameInputPlaceholder;
-              }
-            }
-            Group #SelectedEntities {
-              LayoutMode: Top;
-              Anchor: (Bottom: 16);
-              Label #Label{
-                Text: %mcreator.ui.save.selectedEntitiesLabel;
-                Anchor: (Bottom: 4);
-                Style: $C.@DefaultLabelStyle;
-                TooltipText: %mcreator.ui.save.entitiesTooltip;
-              }
-              Group #Entities{
-                Anchor: (Height: 100);
-                Background: (TexturePath: "../Common/ContainerPanelPatch.png", Border: 4);
-                Padding: (Full: @PanelPadding);
-                LayoutMode: TopScrolling;
-                ScrollbarStyle: $C.@DefaultScrollbarStyle;
-              }
-            }
-            Group #Pack {
-              LayoutMode: Left;
-              Anchor: (Height: 35, Bottom: 16);
-              Label {
-
-                Text: %mcreator.ui.save.packLabel;
-                Anchor: (Left: 0, Top: 8);
-                Style: $C.@DefaultLabelStyle;
-              }
-              $C.@DropdownBox #PackDropdown {
-                @Anchor = (Left: 8, Right: 0);
-                FlexWeight: 1;
-                Value: "";
-              }
-            }
-            Group #CreateItem {
-              LayoutMode: Left;
-              Anchor: (Height: 35, Bottom: 16);
-              $C.@CheckBoxWithLabel {
-                @Text = %mcreator.ui.save.createItem;
-                @Checked = true;
-              }
-            }
-            Group #Buttons {
-              LayoutMode: Center;
-              Anchor: (Top: 0);
-              $C.@TextButton #GenerateButton {
-                @Sounds = $Sounds.@SaveSettings;
-                @Anchor = (Right: 4);
-                Text: %mcreator.ui.generate;
-                FlexWeight: 1;
-              }
-
-              $C.@SecondaryTextButton #CancelButton {
-                @Sounds = $Sounds.@ButtonsCancel;
-                @Anchor = (Left: 4);
-                Text: %server.customUI.cancel;
-                FlexWeight: 1;
-              }
-            }
-          }
-
-        }
-    }
-
-    $C.@Container #Prefab{
-        Visible: false;
-
-        #Title {
-          $C.@Title {
-            @Text = %mcreator.ui.save.prefabTitle;
-          }
-        }
-        #Content {
-          Group #Tab1 {
-            LayoutMode: Center;
+          Anchor: (Bottom: 0);
+          Group #Name {
+            LayoutMode: Left;
+            Anchor: (Height: 35, Bottom: 16);
             Label {
-              Text: %mcreator.ui.WIP;
-              Style: (FontSize: 30, TextColor: $C.@ColorDefaultLabel, Wrap: true, VerticalAlignment: Center);
+              Text: %mcreator.ui.save.nameLabel;
+              Anchor: (Left: 0, Top: 8);
+              Style: $C.@DefaultLabelStyle;
+            }
+            $C.@TextField #NameInput {
+              @Anchor = (Left: 8, Right: 0);
+              FlexWeight: 1;
+              MaxLength: 1024;
+              PlaceholderText: %mcreator.ui.save.nameInputPlaceholder;
+            }
+          }
+          Group #SelectedEntities {
+            LayoutMode: Top;
+            Anchor: (Bottom: 16);
+            Label #Label {
+              Text: %mcreator.ui.save.selectedEntitiesLabel;
+              Anchor: (Bottom: 4);
+              Style: $C.@DefaultLabelStyle;
+              TooltipText: %mcreator.ui.save.entitiesTooltip;
+            }
+            Group #Entities {
+              Anchor: (Height: 100);
+              Background: (
+                TexturePath: "../Common/ContainerPanelPatch.png",
+                Border: 4,
+              );
+              Padding: (Full: @PanelPadding);
+              LayoutMode: TopScrolling;
+              ScrollbarStyle: $C.@DefaultScrollbarStyle;
+            }
+          }
+          Group #Pack {
+            LayoutMode: Left;
+            Anchor: (Height: 35, Bottom: 16);
+            Label {
+              Text: %mcreator.ui.save.packLabel;
+              Anchor: (Left: 0, Top: 8);
+              Style: $C.@DefaultLabelStyle;
+            }
+            $C.@DropdownBox #PackDropdown {
+              @Anchor = (Left: 8, Right: 0);
+              FlexWeight: 1;
+              Value: "";
+            }
+          }
+          Group #CreateItem {
+            LayoutMode: Left;
+            Anchor: (Height: 35, Bottom: 16);
+            $C.@CheckBoxWithLabel {
+              @Text = %mcreator.ui.save.createItem;
+              @Checked = true;
+            }
+          }
+          Group #Buttons {
+            LayoutMode: Center;
+            Anchor: (Top: 0);
+            $C.@TextButton #GenerateButton {
+              @Sounds = $Sounds.@SaveSettings;
+              @Anchor = (Right: 4);
+              Text: %mcreator.ui.generate;
+              FlexWeight: 1;
+            }
+            $C.@SecondaryTextButton #CancelButton {
+              @Sounds = $Sounds.@ButtonsCancel;
+              @Anchor = (Left: 4);
+              Text: %server.customUI.cancel;
+              FlexWeight: 1;
             }
           }
         }
+      }
+    }
+    $C.@Container #Prefab {
+      Visible: false;
+      #Title {
+        $C.@Title {
+          @Text = %mcreator.ui.save.prefabTitle;
+        }
+      }
+      #Content {
+        LayoutMode: Top;
+        Padding: (Full: @ContentPadding);
+        Label #PrefabNotification {
+          Anchor: (Bottom: 0);
+          Padding: (Bottom: 8);
+          Visible: true;
+          Style: (FontSize: 16, TextColor: @Red, Wrap: true);
+          Text: %mcreator.ui.WIP;
+        }
+        Group #Settings {
+          LayoutMode: Top;
+          Anchor: (Bottom: 0);
+          Group #Name {
+            LayoutMode: Left;
+            Anchor: (Height: 35, Bottom: 16);
+            Label {
+              Text: %mcreator.ui.save.nameLabel;
+              Anchor: (Left: 0, Top: 8);
+              Style: $C.@DefaultLabelStyle;
+            }
+            $C.@TextField #NameInput {
+              @Anchor = (Left: 8, Right: 0);
+              FlexWeight: 1;
+              MaxLength: 1024;
+              PlaceholderText: %mcreator.ui.save.nameInputPlaceholder;
+            }
+          }
+          Group #PrefabSelection {
+            LayoutMode: Left;
+            Anchor: (Bottom: 16);
+            Label #Label {
+              Text: %mcreator.ui.save.prefabSelectionLabel;
+              Anchor: (Left: 0, Top: 14);
+              Style: $C.@DefaultLabelStyle;
+            }
+             $C.@TextField #Input {
+               Anchor: (Height: 40, Left: 8, Right: 8);
+               FlexWeight: 1;
+               MaxLength: 4096;
+              PlaceholderText: %mcreator.ui.save.prefabSelectionPlaceholder;
+             }
 
+             $C.@SecondaryTextButton #BrowseButton {
+               @Anchor = (Width: 120, Right: 0);
+               Text: %server.customUI.prefabEditorSettings.browse;
+             }
+          }
+          Group #SelectedEntities {
+            LayoutMode: Top;
+            Anchor: (Bottom: 16);
+            Label #Label {
+              Text: %mcreator.ui.save.selectedEntitiesLabel;
+              Anchor: (Bottom: 4);
+              Style: $C.@DefaultLabelStyle;
+              TooltipText: %mcreator.ui.save.entitiesTooltip;
+            }
+            Group #Entities {
+              Anchor: (Height: 100);
+              Background: (
+                TexturePath: "../Common/ContainerPanelPatch.png",
+                Border: 4,
+              );
+              Padding: (Full: @PanelPadding);
+              LayoutMode: TopScrolling;
+              ScrollbarStyle: $C.@DefaultScrollbarStyle;
+            }
+          }
+          Group #Pack {
+            LayoutMode: Left;
+            Anchor: (Height: 35, Bottom: 16);
+            Label {
+              Text: %mcreator.ui.save.packLabel;
+              Anchor: (Left: 0, Top: 8);
+              Style: $C.@DefaultLabelStyle;
+            }
+            $C.@DropdownBox #PackDropdown {
+              @Anchor = (Left: 8, Right: 0);
+              FlexWeight: 1;
+              Value: "";
+            }
+          }
+          Group #CreateItem {
+            LayoutMode: Left;
+            Anchor: (Height: 35, Bottom: 16);
+            $C.@CheckBoxWithLabel {
+              @Text = %mcreator.ui.save.createItem;
+              @Checked = true;
+            }
+          }
+          Group #Buttons {
+            LayoutMode: Center;
+            Anchor: (Top: 0);
+            $C.@TextButton #GenerateButton {
+              @Sounds = $Sounds.@SaveSettings;
+              @Anchor = (Right: 4);
+              Text: %mcreator.ui.generate;
+              FlexWeight: 1;
+            }
+            $C.@SecondaryTextButton #CancelButton {
+              @Sounds = $Sounds.@ButtonsCancel;
+              @Anchor = (Left: 4);
+              Text: %server.customUI.cancel;
+              FlexWeight: 1;
+            }
+          }
+        }
+      }
     }
-    }
+  }
 }
 
+
+$C.@PageOverlay #BrowserPage {
+  LayoutMode: Middle;
+  Visible: false;
+
+  $C.@DecoratedContainer {
+    Anchor: (Width: 700, Height: 700);
+
+    #Title {
+      $C.@Title {
+        @Text = %server.customUI.prefabEditorSettings.browser.title;
+      }
+    }
+
+    #Content {
+      LayoutMode: Top;
+      Padding: (Full: 16);
+
+      // Current path display
+      Label #CurrentPath {
+        Anchor: (Bottom: 8, Horizontal: 4);
+        Style: (...$C.@DefaultLabelStyle, FontSize: 12, TextColor: #6a7d8f);
+        Text: "";
+      }
+
+      // Shared browser content (root selector + file list)
+      Group #BrowserContent {
+        FlexWeight: 1;
+        $Browser.@PrefabBrowserContent {}
+      }
+
+      Group #BrowserButtons {
+        LayoutMode: Center;
+        Anchor: (Top: 8);
+
+        $C.@TextButton #ConfirmButton {
+          @Sounds = $Sounds.@SaveSettings;
+          @Anchor = (Left: 4, Right: 4);
+          Text: %server.customUI.prefabEditorSettings.browser.confirm;
+          FlexWeight: 1;
+        }
+
+        $C.@SecondaryTextButton #CancelButton {
+          @Sounds = $Sounds.@ButtonsCancel;
+          @Anchor = (Left: 4);
+          Text: %server.customUI.cancel;
+          FlexWeight: 1;
+        }
+      }
+    }
+  }
+}
