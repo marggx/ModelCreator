@@ -191,8 +191,8 @@ public class TextureService {
         );
     }
 
-    public void handleTexture(Model model, BaseModel base, double scale) {
-        String cacheKey = model.texturePath() + "_" + scale;
+    public void handleTexture(Model model, BaseModel base) {
+        String cacheKey = model.texturePath();
         int textureCache = base.getFromTextureCache(cacheKey);
         if (textureCache != -1) {
             TextureService.get().rearrangeTextureLayout(model.blockymodel(), textureCache);
@@ -201,7 +201,7 @@ public class TextureService {
 
         BufferedImage texture;
         try {
-            texture = TextureService.get().scaleImage(TextureService.get().getTexture(model.texturePath()), scale);
+            texture = TextureService.get().getTexture(model.texturePath());
         } catch (Exception e) {
             HytaleLogger.forEnclosingClass().atSevere().log("Failed to load texture for model with id '%s' and texture path '%s'", model.id(), model.texturePath());
             return;
@@ -210,9 +210,8 @@ public class TextureService {
         int textureHeight = base.texture() != null ? base.texture().getHeight() : 0;
         base.extendTexture(texture);
 
-        TextureService.get().rearrangeTextureLayout(model.blockymodel(), textureHeight);
-
         base.addToTextureCache(cacheKey, textureHeight);
+        TextureService.get().rearrangeTextureLayout(model.blockymodel(), textureHeight);
     }
 
     public void rearrangeTextureLayout(BlockymodelBase blockymodel, int textureHeight) {

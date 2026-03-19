@@ -77,7 +77,8 @@ public class Model {
     }
 
     public enum ModelType {
-        ENTITY,
+        ITEM,
+        BLOCK,
         MODEL
     }
 }

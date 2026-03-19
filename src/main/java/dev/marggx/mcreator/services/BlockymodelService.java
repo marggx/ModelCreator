@@ -50,7 +50,6 @@ public class BlockymodelService {
             model.setPath(modelComponent.getModel().getModel());
             model.setTexturePath(modelComponent.getModel().getTexture());
         } else {
-            model.setType(Model.ModelType.ENTITY);
             getAndSetModelAndTexturePaths(model);
         }
 
@@ -119,7 +118,8 @@ public class BlockymodelService {
     public boolean saveBlockymodelBase(BaseModel base) {
         try {
             BlockymodelBase blockymodelBase = createBlockymodelBase(base);
-            if (blockymodelBase == null) return false;
+            HytaleLogger.forEnclosingClass().atSevere().log("Node Count: " + countNodes(blockymodelBase) + " for " + base.name());
+
             Path p = getBlockymodelPathForPack(base.pack());
             if (p == null) return false;
             p = p.resolve("Blocks");
@@ -162,6 +162,11 @@ public class BlockymodelService {
 
     private void getAndSetModelAndTexturePaths(Model model) {
         Item item = getItemFromAssetsById(model.id());
+        if (item.hasBlockType()) {
+            model.setType(Model.ModelType.BLOCK);
+        } else {
+            model.setType(Model.ModelType.ITEM);
+        }
         model.setPath(getModelPathFromItem(item));
         String texturePath = getTexturePathFromItem(item);
         model.setTexturePath(texturePath);
@@ -250,27 +255,12 @@ public class BlockymodelService {
             model.position.scale(scale);
         }
 
-
         if (model.shape != null) {
-            if (model.shape.settings != null) {
-                if (model.shape.settings.size != null) {
-                    model.shape.settings.size.scale(scale);
-                    model.shape.settings.size.round(0);
-                }
+            if (model.shape.stretch != null) {
+                model.shape.stretch.scale(scale);
             }
-
             if (model.shape.offset != null) {
                 model.shape.offset.scale(scale);
-            }
-
-
-            if (model.shape.textureLayout != null) {
-                for (BlockymodelShapeTextureLayout layout : model.shape.textureLayout.values()) {
-                    if (layout.offset == null) continue;
-                    int x = (int)MathUtil.fastRound(layout.offset.x * scale);
-                    int y = (int)MathUtil.fastRound(layout.offset.y * scale);
-                    layout.offset.assign(x, y);
-                }
             }
         }
 
@@ -278,6 +268,29 @@ public class BlockymodelService {
         for (Blockymodel child : model.children) {
             scaleBlockymodel(child, scale);
         }
+    }
+
+    public int countNodes(BlockymodelBase base) {
+        int counter = 0;
+        Blockymodel[] nodes = base.getNodes();
+
+        for (Blockymodel node : nodes) {
+            counter += countNodes(node);
+            counter++;
+        }
+
+        return counter;
+    }
+
+    public int countNodes(Blockymodel blockyNode) {
+        int counter = 0;
+        Blockymodel[] nodes = blockyNode.children;
+
+        for (Blockymodel node : nodes) {
+            counter += countNodes(node);
+            counter++;
+        }
+        return counter;
     }
 
 }

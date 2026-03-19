@@ -103,6 +103,9 @@ public class MapperService {
         BlockymodelQuaternion orientation = BlockymodelQuaternion.fromVector3f(rotationVector);
 
         handleScale(base, model, holder, blockymodelBase);
+
+        TextureService.get().handleTexture(model, base);
+
         handleHeadRotation(rotationVector, model, holder, blockymodelBase);
 
         BlockymodelVector3d offset = BlockymodelVector3d.from(new Vector3d(0, -16.0, 0));
@@ -213,7 +216,6 @@ public class MapperService {
         scale = MathUtil.round(scale, 4);
 
         BlockymodelService.get().scaleBlockymodel(blockymodelBase, scale);
-        TextureService.get().handleTexture(model, base, scale);
     }
 
     private void handleHeadRotation(Vector3f baseOrientation, Model model, Holder<EntityStore> holder, BlockymodelBase blockymodelBase) {
