@@ -1,8 +1,11 @@
 package dev.marggx.mcreator.data.extras;
 
 import com.hypixel.hytale.component.Holder;
+import com.hypixel.hytale.server.core.asset.type.model.config.ModelAttachment;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import dev.marggx.mcreator.data.blockymodel.BlockymodelBase;
+
+import java.util.List;
 
 public class Model {
     private String id;
@@ -11,17 +14,19 @@ public class Model {
     private String path;
     private String texturePath;
     private ModelType type;
+    private ModelAttachment[] attachedModels;
 
     public Model() {
     }
 
-    public Model(String id, BlockymodelBase blockymodel, Holder<EntityStore> holder, String path, String texturePath, ModelType type) {
+    public Model(String id, BlockymodelBase blockymodel, Holder<EntityStore> holder, String path, String texturePath, ModelType type, ModelAttachment[] attachedModels) {
         this.id = id;
         this.blockymodel = blockymodel;
         this.holder = holder;
         this.path = path;
         this.texturePath = texturePath;
         this.type = type;
+        this.attachedModels = attachedModels;
     }
 
     public String id() {
@@ -42,6 +47,10 @@ public class Model {
 
     public String texturePath() {
         return texturePath;
+    }
+
+    public ModelAttachment[] attachedModels() {
+        return attachedModels;
     }
 
     public void setId(String id) {
@@ -74,6 +83,10 @@ public class Model {
 
     public void setType(ModelType type) {
         this.type = type;
+    }
+
+    public void setAttachedModels(ModelAttachment[] attachedModels) {
+        this.attachedModels = attachedModels;
     }
 
     public enum ModelType {

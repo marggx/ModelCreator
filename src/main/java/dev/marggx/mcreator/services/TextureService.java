@@ -215,6 +215,28 @@ public class TextureService {
         TextureService.get().rearrangeTextureLayout(model.blockymodel(), textureHeight);
     }
 
+    public void handleTexture(Blockymodel model, String texturePath, BaseModel base) {
+        int textureCache = base.getFromTextureCache(texturePath);
+        if (textureCache != -1) {
+            TextureService.get().rearrangeTextureLayout(model, textureCache);
+            return;
+        }
+
+        BufferedImage texture;
+        try {
+            texture = TextureService.get().getTexture(texturePath);
+        } catch (Exception e) {
+            LOGGER.severe("Failed to load texture path '%s'", texturePath);
+            return;
+        }
+
+        int textureHeight = base.texture() != null ? base.texture().getHeight() : 0;
+        base.extendTexture(texture);
+
+        base.addToTextureCache(texturePath, textureHeight);
+        TextureService.get().rearrangeTextureLayout(model, textureHeight);
+    }
+
     public void rearrangeTextureLayout(BlockymodelBase blockymodel, int textureHeight) {
         Blockymodel[] nodes = blockymodel.getNodes();
 

@@ -39,6 +39,11 @@ public class BlockymodelBase {
         return nodes;
     }
 
+    public void addNode(Blockymodel node) {
+        nodes = java.util.Arrays.copyOf(nodes, nodes.length + 1);
+        nodes[nodes.length - 1] = node;
+    }
+
     public String getLod() {
         return lod;
     }

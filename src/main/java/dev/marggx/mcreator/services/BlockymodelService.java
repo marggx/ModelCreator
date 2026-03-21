@@ -8,6 +8,7 @@ import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockTypeTextures;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.CustomModelTexture;
 import com.hypixel.hytale.server.core.asset.type.item.config.Item;
+import com.hypixel.hytale.server.core.asset.type.model.config.ModelAttachment;
 import com.hypixel.hytale.server.core.entity.entities.BlockEntity;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.modules.entity.component.ModelComponent;
@@ -17,7 +18,6 @@ import com.hypixel.hytale.server.core.util.BsonUtil;
 import dev.marggx.mcreator.data.blockymodel.Blockymodel;
 import dev.marggx.mcreator.data.blockymodel.BlockymodelBase;
 import dev.marggx.mcreator.data.blockymodel.BlockymodelQuaternion;
-import dev.marggx.mcreator.data.blockymodel.BlockymodelShapeTextureLayout;
 import dev.marggx.mcreator.data.extras.BaseModel;
 import dev.marggx.mcreator.data.extras.Model;
 import dev.marggx.mcreator.utils.Logger;
@@ -49,6 +49,7 @@ public class BlockymodelService {
             model.setType(Model.ModelType.MODEL);
             model.setPath(modelComponent.getModel().getModel());
             model.setTexturePath(modelComponent.getModel().getTexture());
+            model.setAttachedModels(modelComponent.getModel().getAttachments());
         } else {
             getAndSetModelAndTexturePaths(model);
         }
@@ -303,4 +304,19 @@ public class BlockymodelService {
         return counter;
     }
 
+    public void addAttachments(Model model, BaseModel base) {
+        ModelAttachment[] attachments = model.attachedModels();
+        if (attachments == null) return;
+
+        for (ModelAttachment attachment : attachments) {
+            BlockymodelBase blockymodelBase = BlockymodelService.get().loadBlockymodelBase(attachment.getModel());
+            if (blockymodelBase == null) continue;
+
+            Blockymodel[] nodes = blockymodelBase.getNodes();
+            for (Blockymodel node : nodes) {
+                TextureService.get().handleTexture(node, attachment.getTexture(), base);
+                model.blockymodel().addNode(node);
+            }
+        }
+    }
 }

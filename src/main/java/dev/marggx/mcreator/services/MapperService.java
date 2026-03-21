@@ -110,9 +110,14 @@ public class MapperService {
 
         BlockymodelQuaternion orientation = BlockymodelQuaternion.fromVector3f(rotationVector);
 
+        textureService.handleTexture(model, base);
+
+        if (model.attachedModels() != null) {
+            blockymodelService.addAttachments(model, base);
+        }
+
         handleScale(base, model, holder, blockymodelBase);
 
-        TextureService.get().handleTexture(model, base);
 
         handleHeadRotation(rotationVector, model, holder, blockymodelBase);
 
