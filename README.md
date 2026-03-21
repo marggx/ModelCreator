@@ -22,28 +22,16 @@ Instead of building models manually in Blockbench, you can select entities in th
 ### This plugin is currently _in Beta_.
 ### If you encounter any issues, please write a comment or hit me up on any [Social Media](#socials).
 
-### Scaling
-
-In-game scaling is a bit weird.
-Sometimes small pixel errors can appear due to scaling.
-
-These are usually easy to fix manually in Blockbench.
-
-### Some Models
-
-Certain models may still have issues with rotation or position.
-
 ### Mob Models
 
 Mob models export, but attachments are not implemented yet
-(e.g. deer antlers).
+(e.g. deer antlers) (Already in Progress).
 
 ---
 
 # Planned Features
 
 Currently working on:
-* Creating Blockymodels directly from Prefabs
 * More precise entity controls via UI
 * Entity grouping (Move or rotate multiple entities together)
 * Additional utility features
