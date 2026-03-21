@@ -20,29 +20,35 @@ jobs:
           java-version: '25'
           distribution: 'temurin'
 
-      - name: Update version in gradle.properties
+      - name: Fetch latest Hytale Server version
+        id: hytale-version
+        run: |
+          LATEST_VERSION=$(curl -s https://maven.hytale.com/release/com/hypixel/hytale/Server/maven-metadata.xml \
+            | grep -o '<latest>[^<]*</latest>' | sed 's/<[^>]*>//g')
+          echo "version=${LATEST_VERSION}" >> $GITHUB_OUTPUT
+          echo "Fetched Hytale Server version: $LATEST_VERSION"
+
+      - name: Update versions in gradle.properties
         run: |
           VERSION="${GITHUB_REF_NAME}"
+          SERVER_VERSION="${{ steps.hytale-version.outputs.version }}"
           sed -i "s/^version=.*/version=${VERSION}/" gradle.properties
-          echo "Building version: ${VERSION}"
-
+          sed -i "s/^server_version=.*/server_version=${SERVER_VERSION}/" gradle.properties
+          echo "Building version: ${VERSION}, Server version: ${SERVER_VERSION}"
 
       - name: Cache Hytale Server JAR
         id: cache-hytale
         uses: actions/cache@v4
         with:
           path: ${{ runner.temp }}/hytale-home
-          key: hytale-server-${{ hashFiles('gradle.properties') }}
+          key: hytale-server-${{ steps.hytale-version.outputs.version }}
 
-      - name: Download latest Hytale Server JAR
+      - name: Download Hytale Server JAR
         if: steps.cache-hytale.outputs.cache-hit != 'true'
         run: |
+          LATEST_VERSION="${{ steps.hytale-version.outputs.version }}"
           JAR_DIR="${{ runner.temp }}/hytale-home/install/release/package/game/latest/Server"
           mkdir -p "$JAR_DIR"
-
-          LATEST_VERSION=$(curl -s https://maven.hytale.com/release/com/hypixel/hytale/Server/maven-metadata.xml \
-            | grep -o '<latest>[^<]*</latest>' | sed 's/<[^>]*>//g')
-
           echo "Downloading Hytale Server version: $LATEST_VERSION"
           curl -L "https://maven.hytale.com/release/com/hypixel/hytale/Server/${LATEST_VERSION}/Server-${LATEST_VERSION}.jar" \
             -o "$JAR_DIR/HytaleServer.jar"
@@ -55,10 +61,10 @@ jobs:
 
       - name: Commit and push updated files
         run: |
-          git config user.name "github-actions[bot]"
+          git config user.name "[bot]release"
           git config user.email "release+github-actions[bot]@users.noreply.github.com"
           git add gradle.properties src/main/resources/manifest.json
-          git commit -m "chore: bump version to ${GITHUB_REF_NAME}"
+          git commit -m "build(release): bump version to ${GITHUB_REF_NAME}"
           git push origin HEAD:${{ github.event.repository.default_branch }}
 
       - name: Upload artifacts to release

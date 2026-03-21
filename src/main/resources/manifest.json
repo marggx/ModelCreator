@@ -2,7 +2,7 @@
     "Group": "Marggx",
     "Name": "ModelCreator",
     "Version": "1.0.2",
-    "Description": "Building a Plugin for Builders",
+    "Description": "A Plugin that allows you to create Blockymodels directly from in-game entities.",
     "Authors": [
         {
             "Name": "Marggx",

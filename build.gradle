@@ -68,13 +68,36 @@ tasks.register('updatePluginManifest') {
         }
         def manifestJson = new groovy.json.JsonSlurper().parseText(manifestFile.text)
         manifestJson.Version = version
+        manifestJson.ServerVersion = server_version
         manifestJson.IncludesAssetPack = includes_pack.toBoolean()
         manifestFile.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(manifestJson))
     }
 }
 
+tasks.register('fetchLatestServerVersion') {
+    def metadataUrl = 'https://maven.hytale.com/release/com/hypixel/hytale/Server/maven-metadata.xml'
+    def propsFile   = file('gradle.properties')
+    def manifestFile = file('src/main/resources/manifest.json')
+    doLast {
+        def metadata      = new URI(metadataUrl).toURL().text
+        def matcher       = (metadata =~ /<latest>([^<]*)<\/latest>/)
+        if (!matcher.find()) {
+            throw new GradleException("Could not parse latest version from Hytale Maven metadata at ${metadataUrl}")
+        }
+        def latestVersion = matcher.group(1)
+        println "Latest Hytale Server version: ${latestVersion}"
+
+        def content = propsFile.text
+        content = content.replaceAll(/(?m)^server_version=.*$/, "server_version=${latestVersion}")
+        propsFile.text = content
+
+        println "Updated gradle.properties and manifest.json with server_version=${latestVersion}"
+    }
+}
+
 // Makes sure the plugin manifest is up to date.
 tasks.named('processResources') {
+    dependsOn 'fetchLatestServerVersion'
     dependsOn 'updatePluginManifest'
 }
 
