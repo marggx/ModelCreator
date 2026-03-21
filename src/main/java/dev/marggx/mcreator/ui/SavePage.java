@@ -183,29 +183,39 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
     private void setupBasedOnModel(String tab, UICommandBuilder uiCommandBuilder, UIEventBuilder uiEventBuilder) {
         int counter = 0;
         List<Model> models = tab.equals("#PrefabView") ? modelsPrefab : modelsSelection;
+        List<Model> unselected = tab.equals("#PrefabView") ? unselectedModelsPrefab : unselectedModelsSelection;
         if (models.isEmpty()) {
             uiCommandBuilder.set(tab + " #SelectedEntities #Label.Text", Message.translation("mcreator.ui.save.selectedEntitiesLabel").param("count", 0));
             return;
         }
         for (Model model : models) {
-            uiCommandBuilder.append(tab + " #SelectedEntities #Entities", "Pages/EntityEntry.ui");
-            uiCommandBuilder.set(tab + " #SelectedEntities #Entities[" + counter + "] #Label.Text", model.id());
-            Holder<EntityStore> holder = model.holder();
-            UUIDComponent uuid = holder.getComponent(UUIDComponent.getComponentType());
-            if (uuid == null) {
-                continue;
-            }
-            uiCommandBuilder.set(tab + " #SelectedEntities #Entities[" + counter + "] #CheckBox.TooltipText", uuid.getUuid().toString());
-            uiEventBuilder.addEventBinding(
-                    CustomUIEventBindingType.ValueChanged, tab + " #SelectedEntities #Entities[" + counter + "] #CheckBox",
-                    new EventData()
-                            .append(PageData.ACTION, PageData.Action.EntitySelection.name())
-                            .append(PageData.UUID, uuid.getUuid().toString())
-                            .append(PageData.CHECKED, tab + " #SelectedEntities #Entities[" + counter + "] #CheckBox.Value")
-            );
+            buildEntityEntry(counter, model, tab, true, uiCommandBuilder, uiEventBuilder);
+            counter++;
+        }
+        for (Model model : unselected) {
+            buildEntityEntry(counter, model, tab, false, uiCommandBuilder, uiEventBuilder);
             counter++;
         }
         uiCommandBuilder.set(tab + " #SelectedEntities #Label.Text", Message.translation("mcreator.ui.save.selectedEntitiesLabel").param("count", models.size()));
+    }
+
+    private void buildEntityEntry(int counter, Model model, String tab, boolean selected, UICommandBuilder uiCommandBuilder, UIEventBuilder uiEventBuilder) {
+        uiCommandBuilder.append(tab + " #SelectedEntities #Entities", "Pages/EntityEntry.ui");
+        uiCommandBuilder.set(tab + " #SelectedEntities #Entities[" + counter + "] #Label.Text", model.id());
+        Holder<EntityStore> holder = model.holder();
+        UUIDComponent uuid = holder.getComponent(UUIDComponent.getComponentType());
+        if (uuid == null) {
+            return;
+        }
+        uiCommandBuilder.set(tab + " #SelectedEntities #Entities[" + counter + "] #CheckBox.TooltipText", uuid.getUuid().toString());
+        uiCommandBuilder.set(tab + " #SelectedEntities #Entities[" + counter + "] #CheckBox.Value", selected);
+        uiEventBuilder.addEventBinding(
+                CustomUIEventBindingType.ValueChanged, tab + " #SelectedEntities #Entities[" + counter + "] #CheckBox",
+                new EventData()
+                        .append(PageData.ACTION, PageData.Action.EntitySelection.name())
+                        .append(PageData.UUID, uuid.getUuid().toString())
+                        .append(PageData.CHECKED, tab + " #SelectedEntities #Entities[" + counter + "] #CheckBox.Value")
+        );
     }
 
     private void buildError(UICommandBuilder uiCommandBuilder, String message) {
