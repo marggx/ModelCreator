@@ -1,7 +1,6 @@
 package dev.marggx.mcreator.services;
 
 import com.hypixel.hytale.assetstore.AssetPack;
-import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.math.util.MathUtil;
 import com.hypixel.hytale.server.core.asset.AssetModule;
 import dev.marggx.mcreator.data.blockymodel.Blockymodel;
@@ -9,6 +8,7 @@ import dev.marggx.mcreator.data.blockymodel.BlockymodelBase;
 import dev.marggx.mcreator.data.blockymodel.BlockymodelShapeTextureLayout;
 import dev.marggx.mcreator.data.extras.BaseModel;
 import dev.marggx.mcreator.data.extras.Model;
+import dev.marggx.mcreator.utils.Logger;
 
 import javax.annotation.Nonnull;
 import javax.imageio.ImageIO;
@@ -24,6 +24,7 @@ import java.util.List;
 public class TextureService {
 
     private static final TextureService INSTANCE = new TextureService();
+    private static final Logger LOGGER = Logger.get();
     public static TextureService get() {
         return INSTANCE;
     }
@@ -106,7 +107,7 @@ public class TextureService {
             outputPath = outputPath.resolve(model.name() + ".png");
             ImageIO.write(model.texture(), "PNG", outputPath.toFile());
         } catch (IOException e) {
-            HytaleLogger.forEnclosingClass().atSevere().log("Failed to save texture to path '%s'", e.getMessage());
+            LOGGER.severe("Failed to save texture to path '%s'", e.getMessage());
             return false;
         }
         return true;
@@ -145,7 +146,7 @@ public class TextureService {
             try {
                 Files.createDirectories(texturePathForPack);
             } catch (Exception e) {
-                HytaleLogger.forEnclosingClass().atSevere().log("Failed to create directory for texture in pack '%s'", name);
+                LOGGER.severe("Failed to create directory for texture in pack '%s'", name);
                 return null;
             }
         }
@@ -203,7 +204,7 @@ public class TextureService {
         try {
             texture = TextureService.get().getTexture(model.texturePath());
         } catch (Exception e) {
-            HytaleLogger.forEnclosingClass().atSevere().log("Failed to load texture for model with id '%s' and texture path '%s'", model.id(), model.texturePath());
+            LOGGER.severe("Failed to load texture for model with id '%s' and texture path '%s'", model.id(), model.texturePath());
             return;
         }
 

@@ -1,7 +1,6 @@
 package dev.marggx.mcreator.services;
 
 import com.hypixel.hytale.component.Holder;
-import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.math.util.MathUtil;
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.math.vector.Vector3f;
@@ -15,34 +14,39 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import dev.marggx.mcreator.data.blockymodel.*;
 import dev.marggx.mcreator.data.extras.BaseModel;
 import dev.marggx.mcreator.data.extras.Model;
+import dev.marggx.mcreator.utils.Logger;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class MapperService {
     private static final MapperService INSTANCE = new MapperService();
+    private static final Logger LOGGER = Logger.get();
     public static MapperService get() {
         return INSTANCE;
     }
 
-    public boolean createBlockymodelFromPrefab(String prefabName, String pack, String name) {
-        List<Model> blockymodels = getBlockymodelsAndEntitiesFromPrefab(prefabName);
+    private final BlockymodelService blockymodelService = BlockymodelService.get();
+    private final TextureService textureService = TextureService.get();
+    private final HytaleService hytaleService = HytaleService.get();
+
+    public boolean createBlockymodelFromPrefab(Path prefabPath, String pack, String name, boolean createNewItem) {
+        BlockSelection prefab = PrefabStore.get().getPrefab(prefabPath);
+        List<Model> blockymodels = getBlockymodelsAndEntitiesFromBlockSelection(prefab);
         if (blockymodels == null) return false;
-        BaseModel base = new BaseModel(600, null, null, null, null, null);
-        BaseModel model = createBlockymodel(blockymodels, base);
-        model.setName(name);
-        model.setPack(pack);
-        return createNewModel(model);
+
+        return createBlockymodelFromBlockSelection(blockymodels, prefab, pack, name, createNewItem);
     }
 
-    public boolean createBlockymodelFromBlockSelection(BlockSelection selection, String pack, String name) {
+    public boolean createBlockymodelFromBlockSelection(BlockSelection selection, String pack, String name, boolean createNewItem) {
         List<Model> blockymodels = getBlockymodelsAndEntitiesFromBlockSelection(selection);
         if (blockymodels == null) return false;
 
-        return createBlockymodelFromBlockSelection(blockymodels, selection, pack, name, false);
+        return createBlockymodelFromBlockSelection(blockymodels, selection, pack, name, createNewItem);
     }
 
     public boolean createBlockymodelFromBlockSelection(List<Model> blockymodels, BlockSelection selection, String pack, String name, boolean createNewItem) {
@@ -57,9 +61,9 @@ public class MapperService {
         if (!createNewItem) return true;
         HytaleServer.SCHEDULED_EXECUTOR.schedule(() -> {
             try {
-                HytaleService.get().createNewItem(base);
+                hytaleService.createNewItem(base);
             } catch (IOException e) {
-                HytaleLogger.forEnclosingClass().atSevere().log("Failed to create new item for blockymodel: " + model.name(), e);
+                LOGGER.severe("Failed to create new item for blockymodel: " + model.name(), e);
             }
         }, 3L, TimeUnit.SECONDS);
         return true;
@@ -69,7 +73,7 @@ public class MapperService {
         boolean valid = model.validate();
         if (!valid) return false;
 
-        return BlockymodelService.get().saveBlockymodelBase(model) && TextureService.get().saveTexture(model);
+        return blockymodelService.saveBlockymodelBase(model) && textureService.saveTexture(model);
     }
 
     private BaseModel createBlockymodel(List<Model> models, BaseModel base) {
@@ -87,18 +91,21 @@ public class MapperService {
     private Blockymodel createBlockymodelFromExistingModel(BaseModel base, Model model) {
         Holder<EntityStore> holder = model.holder();
         TransformComponent transform = holder.getComponent(TransformComponent.getComponentType());
-        if (transform == null) return null;
+        if (transform == null) {
+            LOGGER.warning("Model " + model.id() + " has no transform component. Cannot create blockymodel.");
+            return null;
+        }
 
         BlockymodelVector3d position = BlockymodelVector3d.from(transform.getPosition());
         HeadRotation headRotation = holder.getComponent(HeadRotation.getComponentType());
         Vector3f rotationVector = createRotationVector(model, headRotation, transform);
 
-        BlockymodelBase blockymodelBase = model.blockymodel();
+        BlockymodelBase blockymodelBase = blockymodelService.loadBlockymodelBase(model.path());
         if (blockymodelBase == null) {
-            blockymodelBase = BlockymodelService.get().loadBlockymodelBase(model.path());
-            if (blockymodelBase == null) return null;
-            model.setBlockymodel(blockymodelBase);
+            LOGGER.warning("Model " + model.id() + " has no blockymodel. Cannot create blockymodel.");
+            return null;
         }
+        model.setBlockymodel(blockymodelBase);
 
         BlockymodelQuaternion orientation = BlockymodelQuaternion.fromVector3f(rotationVector);
 
@@ -132,30 +139,36 @@ public class MapperService {
     }
 
     public List<Model> getBlockymodelsAndEntitiesFromPrefab(String prefabName) {
-        List<Holder<EntityStore>> entities = HytaleService.get().getEntitiesFromPrefab(prefabName);
-        if (entities.isEmpty()) return null;
+        List<Holder<EntityStore>> entities = hytaleService.getEntitiesFromPrefab(prefabName);
+        if (entities.isEmpty()) {
+            LOGGER.warning("No entities found in prefab. Cannot create List<Model>.");
+            return null;
+        };
         return getModelsFromEntities(entities);
     }
 
     public List<Model> getBlockymodelsAndEntitiesFromBlockSelection(BlockSelection selection) {
-        List<Holder<EntityStore>> entities = HytaleService.get().getEntitiesFromBlockSelection(selection);
-        if (entities.isEmpty()) return null;
+        List<Holder<EntityStore>> entities = hytaleService.getEntitiesFromBlockSelection(selection);
+        if (entities.isEmpty()) {
+            LOGGER.warning("No entities found in selection. Cannot create List<Model>.");
+            return null;
+        }
         return getModelsFromEntities(entities);
     }
 
     public List<Model> getModelsFromEntities(List<Holder<EntityStore>> entities) {
         List<Model> list = new ObjectArrayList<>();
         for (Holder<EntityStore> entity : entities) {
-            Model model = BlockymodelService.get().loadModelFromHolder(entity);
+            Model model = blockymodelService.loadModelFromHolder(entity);
 
             if (model == null || !model.validate()) {
-                HytaleLogger.forEnclosingClass().atSevere().log("Something went wrong when loading a model from an entity.", model);
+                LOGGER.severe("Something went wrong when loading a model from an entity.", model);
                 continue;
             }
 
             list.add(model);
         }
-        return HytaleService.get().deduplicateModels(list);
+        return hytaleService.deduplicateModels(list);
     }
 
     public Vector3f createRotationVector(Model model, HeadRotation headRotation, TransformComponent transform) {
@@ -215,7 +228,7 @@ public class MapperService {
         }
         scale = MathUtil.round(scale, 4);
 
-        BlockymodelService.get().scaleBlockymodel(blockymodelBase, scale);
+        blockymodelService.scaleBlockymodel(blockymodelBase, scale);
     }
 
     private void handleHeadRotation(Vector3f baseOrientation, Model model, Holder<EntityStore> holder, BlockymodelBase blockymodelBase) {
@@ -229,9 +242,9 @@ public class MapperService {
         }
 
         BlockymodelQuaternion orientation = BlockymodelQuaternion.getLocalQuat(baseOrientation, headRotation.getRotation());
-        boolean didWork = BlockymodelService.get().setHeadRotation(blockymodelBase, orientation);
+        boolean didWork = blockymodelService.setHeadRotation(blockymodelBase, orientation);
         if (!didWork) {
-            HytaleLogger.forEnclosingClass().atSevere().log("Failed to set head rotation for model: " + model.id());
+            LOGGER.severe("Failed to set head rotation for model: " + model.id());
         }
     }
 }

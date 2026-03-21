@@ -11,7 +11,6 @@ import com.hypixel.hytale.common.util.PathUtil;
 import com.hypixel.hytale.component.Holder;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
-import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.protocol.packets.interface_.NotificationStyle;
@@ -38,6 +37,7 @@ import com.hypixel.hytale.server.core.util.NotificationUtil;
 import dev.marggx.mcreator.data.extras.Model;
 import dev.marggx.mcreator.services.HytaleService;
 import dev.marggx.mcreator.services.MapperService;
+import dev.marggx.mcreator.utils.Logger;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 
@@ -53,7 +53,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
-    private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
+    private static final Logger LOGGER = Logger.get();
     private static final Value<String> BUTTON_HIGHLIGHTED = Value.ref("Pages/BasicTextButton.ui", "SelectedLabelStyle");
 
     private BlockSelection selection;
@@ -500,7 +500,7 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
                     }
                 }
             } catch (IOException var15) {
-                LOGGER.atSevere().log("Error reading directory for browser", var15);
+                LOGGER.severe("Error reading directory for browser", var15);
             }
         }
 

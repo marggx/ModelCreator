@@ -3,8 +3,6 @@ package dev.marggx.mcreator.services;
 import com.hypixel.hytale.assetstore.AssetPack;
 import com.hypixel.hytale.codec.ExtraInfo;
 import com.hypixel.hytale.component.Holder;
-import com.hypixel.hytale.logger.HytaleLogger;
-import com.hypixel.hytale.math.util.MathUtil;
 import com.hypixel.hytale.server.core.asset.AssetModule;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockTypeTextures;
@@ -22,6 +20,7 @@ import dev.marggx.mcreator.data.blockymodel.BlockymodelQuaternion;
 import dev.marggx.mcreator.data.blockymodel.BlockymodelShapeTextureLayout;
 import dev.marggx.mcreator.data.extras.BaseModel;
 import dev.marggx.mcreator.data.extras.Model;
+import dev.marggx.mcreator.utils.Logger;
 import org.bson.BsonDocument;
 
 import javax.annotation.Nonnull;
@@ -32,6 +31,7 @@ import java.util.List;
 public class BlockymodelService {
 
     private static final BlockymodelService INSTANCE = new BlockymodelService();
+    private static final Logger LOGGER = Logger.get();
     public static BlockymodelService get() {
         return INSTANCE;
     }
@@ -100,7 +100,7 @@ public class BlockymodelService {
             try {
                 Files.createDirectories(blockmodelPackPath);
             } catch (Exception e) {
-                HytaleLogger.forEnclosingClass().atSevere().log("Failed to create directory for blockymodel in pack '%s'", name);
+                LOGGER.severe("Failed to create directory for blockymodel in pack '%s'", name);
                 return null;
             }
         }
@@ -118,7 +118,11 @@ public class BlockymodelService {
     public boolean saveBlockymodelBase(BaseModel base) {
         try {
             BlockymodelBase blockymodelBase = createBlockymodelBase(base);
-            HytaleLogger.forEnclosingClass().atSevere().log("Node Count: " + countNodes(blockymodelBase) + " for " + base.name());
+            if (blockymodelBase == null) {
+                LOGGER.severe("Failed, model.blockymodel() seem to be empty for: " + base.name());
+                return false;
+            }
+            LOGGER.severe("Node Count: " + countNodes(blockymodelBase) + " for " + base.name());
 
             Path p = getBlockymodelPathForPack(base.pack());
             if (p == null) return false;
@@ -130,6 +134,7 @@ public class BlockymodelService {
             saveBlockymodel(blockymodelBase, p);
             return true;
         } catch (Exception e) {
+            LOGGER.severe("Exception while saving Blockymodel: " + e);
             return false;
         }
     }
