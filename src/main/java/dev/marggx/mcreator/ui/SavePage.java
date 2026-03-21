@@ -17,10 +17,10 @@ import com.hypixel.hytale.protocol.packets.interface_.NotificationStyle;
 import com.hypixel.hytale.protocol.packets.interface_.Page;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.asset.AssetModule;
+import com.hypixel.hytale.server.core.entity.UUIDComponent;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.entity.entities.player.pages.InteractiveCustomUIPage;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
-import com.hypixel.hytale.server.core.modules.entity.tracker.NetworkId;
 import com.hypixel.hytale.server.core.modules.singleplayer.SingleplayerModule;
 import com.hypixel.hytale.server.core.prefab.PrefabStore;
 import com.hypixel.hytale.server.core.prefab.selection.standard.BlockSelection;
@@ -55,10 +55,13 @@ import java.util.List;
 public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
     private static final Logger LOGGER = Logger.get();
     private static final Value<String> BUTTON_HIGHLIGHTED = Value.ref("Pages/BasicTextButton.ui", "SelectedLabelStyle");
+    private final MapperService mapperService = MapperService.get();
 
     private BlockSelection selection;
-    private List<Model> models = new ObjectArrayList<>();
-    private List<Model> unselectedModels = new ObjectArrayList<>();
+    private List<Model> modelsSelection = new ObjectArrayList<>();
+    private List<Model> modelsPrefab = new ObjectArrayList<>();
+    private List<Model> unselectedModelsSelection = new ObjectArrayList<>();
+    private List<Model> unselectedModelsPrefab = new ObjectArrayList<>();
     private Path browserRoot;
     private Path browserCurrent;
     private String selectedPath;
@@ -69,47 +72,44 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
     private boolean inAssetsRoot = false;
     @Nonnull
     private Path assetsCurrentDir = Paths.get("");
+    private boolean isPrefab = false;
 
     public SavePage(@Nonnull PlayerRef playerRef, BlockSelection selection) {
         super(playerRef, CustomPageLifetime.CanDismissOrCloseThroughInteraction, SavePage.PageData.CODEC);
         this.selection = selection;
-        this.models = MapperService.get().getBlockymodelsAndEntitiesFromBlockSelection(selection);
+        if (selection == null) {
+            isPrefab = true;
+            return;
+        }
+        this.modelsSelection = mapperService.getBlockymodelsAndEntitiesFromBlockSelection(selection);
+        if (modelsSelection == null || modelsSelection.isEmpty()) {
+            modelsSelection = new ObjectArrayList<>();
+            isPrefab = true;
+        }
     }
 
     @Override
     public void build(@NonNullDecl Ref<EntityStore> ref, @NonNullDecl UICommandBuilder uiCommandBuilder, @NonNullDecl UIEventBuilder uiEventBuilder, @NonNullDecl Store<EntityStore> store) {
         uiCommandBuilder.append("Pages/Save.ui");
-        uiCommandBuilder.set("#Main #SelectedEntities #Label.Text", Message.translation("mcreator.ui.save.selectedEntitiesLabel").param("count", selection.getEntityCount()));
-        int counter = 0;
-
-        if (models == null) {
-            buildError(uiCommandBuilder, Message.translation("mcreator.ui.error.noEntities").getAnsiMessage());
-            uiCommandBuilder.set("#Settings.Visible", false);
-            return;
-        }
-        for (Model model : models) {
-            uiCommandBuilder.append("#Main #SelectedEntities #Entities", "Pages/EntityEntry.ui");
-            uiCommandBuilder.set("#Main #SelectedEntities #Entities[" + counter + "] #Label.Text", model.id());
-            Holder<EntityStore> holder = model.holder();
-            NetworkId netId = holder.getComponent(NetworkId.getComponentType());
-            if (netId == null) {
-                continue;
-            }
-            uiCommandBuilder.set("#Main #SelectedEntities #Entities[" + counter + "] #CheckBox.TooltipText", String.valueOf(netId.getId()));
-            uiEventBuilder.addEventBinding(
-                    CustomUIEventBindingType.ValueChanged, "#Main #SelectedEntities #Entities[" + counter + "] #CheckBox",
-                    new EventData()
-                            .append(PageData.ACTION, PageData.Action.EntitySelection.name())
-                            .append(PageData.NETWORK_ID, String.valueOf(netId.getId()))
-                            .append(PageData.CHECKED, "#Main #SelectedEntities #Entities[" + counter + "] #CheckBox.Value")
-            );
-            counter++;
-        }
+        uiCommandBuilder.set("#Tabs.SelectedTab", isPrefab ? "Prefab" : "Selection");
         uiEventBuilder.addEventBinding(CustomUIEventBindingType.SelectedTabChanged, "#Tabs", new EventData().append(PageData.ACTION, PageData.Action.TabSelection.name()).append(PageData.TAB, "#Tabs.SelectedTab"));
 
         if (AssetModule.get().getAssetPacks().size() == 1) {
-            buildError(uiCommandBuilder, Message.translation("mcreator.ui.error.createPack").getAnsiMessage());
+            buildError(uiCommandBuilder, Message.translation("mcreator.ui.error.createPack").getAnsiMessage(), true);
+            return;
         }
+
+        setupBasedOnModel("#PrefabView", uiCommandBuilder, uiEventBuilder);
+        setupBasedOnModel("#SelectionView", uiCommandBuilder, uiEventBuilder);
+        if (isPrefab) {
+            uiCommandBuilder.set("#MainPage #PrefabSelection #Input.Value", this.selectedPath != null ? this.selectedPath : "");
+            uiCommandBuilder.set("#Main #SelectionView.Visible", false);
+            uiCommandBuilder.set("#Main #PrefabView.Visible", true);
+        } else {
+            uiCommandBuilder.set("#Main #SelectionView.Visible", true);
+            uiCommandBuilder.set("#Main #PrefabView.Visible", false);
+        }
+
         boolean firstPack = AssetModule.get().getAssetPacks().size() != 1;
         String firstEntry = "";
         List<DropdownEntryInfo> entries = new ArrayList<>();
@@ -123,16 +123,28 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
             }
             entries.add(new DropdownEntryInfo(LocalizableString.fromString(pack.getName()), pack.getName()));
         }
-        uiCommandBuilder.set("#PackDropdown.Entries", entries);
-        uiCommandBuilder.set("#PackDropdown.Value", firstEntry);
-        uiEventBuilder.addEventBinding(CustomUIEventBindingType.Activating, "#CancelButton", new EventData().append(PageData.ACTION, PageData.Action.Cancel.name()));
+
+        uiCommandBuilder.set("#SelectionView #PackDropdown.Entries", entries);
+        uiCommandBuilder.set("#PrefabView #PackDropdown.Entries", entries);
+        uiCommandBuilder.set("#PrefabView #PackDropdown.Value", firstEntry);
+        uiCommandBuilder.set("#SelectionView #PackDropdown.Value", firstEntry);
+        uiEventBuilder.addEventBinding(CustomUIEventBindingType.Activating, "#SelectionView #CancelButton", new EventData().append(PageData.ACTION, PageData.Action.Cancel.name()));
         uiEventBuilder.addEventBinding(
-                CustomUIEventBindingType.Activating, "#GenerateButton",
+                CustomUIEventBindingType.Activating, "#SelectionView #GenerateButton",
                 new EventData()
                         .append(PageData.ACTION, PageData.Action.Generate.name())
-                        .append(PageData.PACK, "#Pack #PackDropdown.Value")
-                        .append(PageData.NAME, "#Name #NameInput.Value")
-                        .append(PageData.CREATE_ITEM, "#CreateItem #CheckBox.Value")
+                        .append(PageData.PACK, "#SelectionView #Pack #PackDropdown.Value")
+                        .append(PageData.NAME, "#SelectionView #Name #NameInput.Value")
+                        .append(PageData.CREATE_ITEM, "#SelectionView #CreateItem #CheckBox.Value")
+        );
+        uiEventBuilder.addEventBinding(CustomUIEventBindingType.Activating, "#PrefabView #CancelButton", new EventData().append(PageData.ACTION, PageData.Action.Cancel.name()));
+        uiEventBuilder.addEventBinding(
+                CustomUIEventBindingType.Activating, "#PrefabView #GenerateButton",
+                new EventData()
+                        .append(PageData.ACTION, PageData.Action.Generate.name())
+                        .append(PageData.PACK, "#PrefabView #Pack #PackDropdown.Value")
+                        .append(PageData.NAME, "#PrefabView #Name #NameInput.Value")
+                        .append(PageData.CREATE_ITEM, "#PrefabView #CreateItem #CheckBox.Value")
         );
         uiEventBuilder.addEventBinding(
                 CustomUIEventBindingType.Activating,
@@ -143,7 +155,7 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
                 CustomUIEventBindingType.ValueChanged,
                 "#BrowserPage #BrowserContent #RootSelector",
                 new EventData()
-                        .append("Action", PageData.Action.BrowserRootChanged.name())
+                        .append(PageData.ACTION, PageData.Action.BrowserRootChanged.name())
                         .append("@BrowserRoot", "#BrowserPage #BrowserContent #RootSelector.Value"),
                 false
         );
@@ -151,21 +163,49 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
                 CustomUIEventBindingType.ValueChanged,
                 "#BrowserPage #BrowserContent #SearchInput",
                 new EventData()
-                        .append("Action", PageData.Action.BrowserSearch.name())
+                        .append(PageData.ACTION, PageData.Action.BrowserSearch.name())
                         .append("@BrowserSearch", "#BrowserPage #BrowserContent #SearchInput.Value"),
                 false
         );
         uiEventBuilder.addEventBinding(
                 CustomUIEventBindingType.Activating,
                 "#BrowserPage #ConfirmButton",
-                new EventData().append("Action", PageData.Action.ConfirmBrowser.name())
+                new EventData().append(PageData.ACTION, PageData.Action.ConfirmBrowser.name())
         );
         uiEventBuilder.addEventBinding(
                 CustomUIEventBindingType.Activating,
                 "#BrowserPage #CancelButton",
-                new EventData().append("Action", PageData.Action.CancelBrowser.name())
+                new EventData().append(PageData.ACTION, PageData.Action.CancelBrowser.name())
         );
         uiCommandBuilder.set("#BrowserPage.Visible", false);
+    }
+
+    private void setupBasedOnModel(String tab, UICommandBuilder uiCommandBuilder, UIEventBuilder uiEventBuilder) {
+        int counter = 0;
+        List<Model> models = tab.equals("#PrefabView") ? modelsPrefab : modelsSelection;
+        if (models.isEmpty()) {
+            uiCommandBuilder.set(tab + " #SelectedEntities #Label.Text", Message.translation("mcreator.ui.save.selectedEntitiesLabel").param("count", 0));
+            return;
+        }
+        for (Model model : models) {
+            uiCommandBuilder.append(tab + " #SelectedEntities #Entities", "Pages/EntityEntry.ui");
+            uiCommandBuilder.set(tab + " #SelectedEntities #Entities[" + counter + "] #Label.Text", model.id());
+            Holder<EntityStore> holder = model.holder();
+            UUIDComponent uuid = holder.getComponent(UUIDComponent.getComponentType());
+            if (uuid == null) {
+                continue;
+            }
+            uiCommandBuilder.set(tab + " #SelectedEntities #Entities[" + counter + "] #CheckBox.TooltipText", uuid.getUuid().toString());
+            uiEventBuilder.addEventBinding(
+                    CustomUIEventBindingType.ValueChanged, tab + " #SelectedEntities #Entities[" + counter + "] #CheckBox",
+                    new EventData()
+                            .append(PageData.ACTION, PageData.Action.EntitySelection.name())
+                            .append(PageData.UUID, uuid.getUuid().toString())
+                            .append(PageData.CHECKED, tab + " #SelectedEntities #Entities[" + counter + "] #CheckBox.Value")
+            );
+            counter++;
+        }
+        uiCommandBuilder.set(tab + " #SelectedEntities #Label.Text", Message.translation("mcreator.ui.save.selectedEntitiesLabel").param("count", models.size()));
     }
 
     private void buildError(UICommandBuilder uiCommandBuilder, String message) {
@@ -174,14 +214,20 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
 
     private void buildError(UICommandBuilder uiCommandBuilder, String message, boolean disableGenerateButton) {
         uiCommandBuilder.set("#SelectionNotification.Text", message);
+        uiCommandBuilder.set("#PrefabNotification.Text", message);
         uiCommandBuilder.set("#SelectionNotification.Visible", true);
-        uiCommandBuilder.set("#GenerateButton.Disabled", disableGenerateButton);
+        uiCommandBuilder.set("#PrefabNotification.Visible", true);
+        uiCommandBuilder.set("#SelectionView #GenerateButton.Disabled", disableGenerateButton);
+        uiCommandBuilder.set("#PrefabView #GenerateButton.Disabled", disableGenerateButton);
     }
 
     private void hideError(UICommandBuilder uiCommandBuilder) {
         uiCommandBuilder.set("#SelectionNotification.Text", "");
         uiCommandBuilder.set("#SelectionNotification.Visible", false);
-        uiCommandBuilder.set("#GenerateButton.Disabled", false);
+        uiCommandBuilder.set("#SelectionView #GenerateButton.Disabled", false);
+        uiCommandBuilder.set("#PrefabNotification.Text", "");
+        uiCommandBuilder.set("#PrefabNotification.Visible", false);
+        uiCommandBuilder.set("#PrefabView #GenerateButton.Disabled", false);
     }
 
     public void handleDataEvent(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, @Nonnull PageData data) {
@@ -191,13 +237,17 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
         switch (data.action) {
             case TabSelection: {
                 if (data.tab.equals("Selection")) {
-                    uiBuilder.set("#Main #Selection.Visible", true);
-                    uiBuilder.set("#Main #Prefab.Visible", false);
+                    uiBuilder.set("#Main #SelectionView.Visible", true);
+                    uiBuilder.set("#Main #PrefabView.Visible", false);
+                    isPrefab = false;
+                    if (modelsSelection.isEmpty()) {
+                        buildError(uiBuilder, Message.translation("mcreator.ui.error.noEntities").getAnsiMessage(), true);
+                    }
                 } else {
-                    uiBuilder.set("#Main #Selection.Visible", false);
-                    uiBuilder.set("#Main #Prefab.Visible", true);
+                    isPrefab = true;
+                    uiBuilder.set("#Main #SelectionView.Visible", false);
+                    uiBuilder.set("#Main #PrefabView.Visible", true);
                 }
-                hideError(uiBuilder);
                 this.sendUpdate(uiBuilder);
                 break;
             }
@@ -207,10 +257,12 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
             }
 
             case EntitySelection: {
+                List<Model> models = isPrefab ? modelsPrefab : modelsSelection;
+                List<Model> unselectedModels = isPrefab ? unselectedModelsPrefab : unselectedModelsSelection;
                 if (data.checked) {
                     for (Model model : unselectedModels) {
-                        NetworkId netId = model.holder().getComponent(NetworkId.getComponentType());
-                        if (netId != null && String.valueOf(netId.getId()).equals(data.networkId)) {
+                        UUIDComponent uuid = model.holder().getComponent(UUIDComponent.getComponentType());
+                        if (uuid != null && uuid.getUuid().toString().equals(data.uuid)) {
                             hideError(uiBuilder);
                             models.add(model);
                             unselectedModels.remove(model);
@@ -219,8 +271,8 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
                     }
                 } else {
                     for (Model model : models) {
-                        NetworkId netId = model.holder().getComponent(NetworkId.getComponentType());
-                        if (netId != null && String.valueOf(netId.getId()).equals(data.networkId)) {
+                        UUIDComponent uuid = model.holder().getComponent(UUIDComponent.getComponentType());
+                        if (uuid != null && uuid.getUuid().toString().equals(data.uuid)) {
                             models.remove(model);
                             unselectedModels.add(model);
 
@@ -231,33 +283,34 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
                         }
                     }
                 }
-                uiBuilder.set("#Main #SelectedEntities #Label.Text", Message.translation("mcreator.ui.save.selectedEntitiesLabel").param("count", models.size()));
+                uiBuilder.set((isPrefab ? "#PrefabView" : "#SelectionView") + " #SelectedEntities #Label.Text", Message.translation("mcreator.ui.save.selectedEntitiesLabel").param("count", models.size()));
                 this.sendUpdate(uiBuilder);
                 break;
             }
-            case Generate: {
-                if (models.isEmpty()) {
-                    buildError(uiBuilder, Message.translation("mcreator.ui.error.noEntities").getAnsiMessage());
-                    this.sendUpdate(uiBuilder);
-                    break;
-                }
 
+            case Generate: {
                 if (data.name == null || data.name.isEmpty()) {
                     buildError(uiBuilder, Message.translation("mcreator.ui.error.noName").getAnsiMessage(), false);
                     this.sendUpdate(uiBuilder);
                     break;
                 }
 
+                List<Model> models = isPrefab ? modelsPrefab : modelsSelection;
 
-                boolean created = MapperService.get().createBlockymodelFromBlockSelection(models, selection, data.pack, data.name, data.createItem);
+                if (models == null || models.isEmpty()) {
+                    buildError(uiBuilder, Message.translation("mcreator.ui.error.noEntities").getAnsiMessage(), false);
+                    this.sendUpdate(uiBuilder);
+                    break;
+                }
+
+                boolean created = mapperService.createBlockymodelFromBlockSelection(models, selection, data.pack, data.name, data.createItem);
                 if (created) {
-                    playerComponent.getPageManager().setPage(ref, store, Page.None);
                     NotificationUtil.sendNotificationToUniverse(Message.translation("mcreator.ui.save.success").param("pack", data.pack), NotificationStyle.Success);
                     playerComponent.getInventory().getCombinedHotbarFirst().addItemStack(new ItemStack(HytaleService.get().createValidItemName(data.name)));
                 } else {
-                    playerComponent.getPageManager().setPage(ref, store, Page.None);
                     NotificationUtil.sendNotificationToUniverse(Message.translation("mcreator.ui.save.error").param("pack", data.pack), NotificationStyle.Danger);
                 }
+                playerComponent.getPageManager().setPage(ref, store, Page.None);
                 break;
             }
 
@@ -339,9 +392,12 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
                 UICommandBuilder commandBuilder = new UICommandBuilder();
                 commandBuilder.set("#MainPage #PrefabSelection #Input.Value", pathToSet);
 
+                setSelectionAndModelsFromPrefab(pathToSet, commandBuilder);
+
                 commandBuilder.set("#BrowserPage.Visible", false);
                 commandBuilder.set("#MainPage.Visible", true);
                 this.sendUpdate(commandBuilder);
+                this.rebuild();
                 break;
             }
             case CancelBrowser: {
@@ -353,6 +409,24 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
         }
     }
 
+    private void setSelectionAndModelsFromPrefab(String path, UICommandBuilder commandBuilder) {
+        BlockSelection prefab = HytaleService.get().getBlockSelectionFromPrefab(path);
+
+        if (prefab == null) {
+            buildError(commandBuilder, Message.translation("mcreator.ui.error.invalidFile").getAnsiMessage());
+        }
+        this.selection = prefab;
+
+        if (prefab != null) {
+            List<Model> blockymodels = MapperService.get().getBlockymodelsAndEntitiesFromBlockSelection(prefab);
+            if (blockymodels == null) {
+                this.modelsPrefab.clear();
+                buildError(commandBuilder, Message.translation("mcreator.ui.error.noEntities").getAnsiMessage());
+            } else {
+                this.modelsPrefab = blockymodels;
+            }
+        }
+    }
 
     private void handleAssetsNavigation(@Nonnull String fileName) {
         if ("..".equals(fileName)) {
@@ -621,7 +695,7 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
 
 
     public static class PageData {
-        public static enum Action {
+        public enum Action {
             Generate,
             Cancel,
             TabSelection,
@@ -633,7 +707,7 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
             ConfirmBrowser,
             CancelBrowser;
 
-            private Action() {
+            Action() {
             }
         }
 
@@ -641,7 +715,7 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
         public static final String TAB = "@Tab";
         public static final String NAME = "@Name";
         public static final String PACK = "@Pack";
-        public static final String NETWORK_ID = "NetworkId";
+        public static final String UUID = "UUID";
         public static final String CHECKED = "@Checked";
         public static final String CREATE_ITEM = "@CreateItem";
         public static final String BROWSER_FILE = "File";
@@ -660,23 +734,23 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
                 .add()
                 .append(new KeyedCodec<>(PACK, Codec.STRING), (o, pack) -> o.pack = pack, o -> o.pack)
                 .add()
-                .append(new KeyedCodec<>(NETWORK_ID, Codec.STRING), (o, networkId) -> o.networkId = networkId, o -> o.networkId)
+                .append(new KeyedCodec<>(UUID, Codec.STRING), (o, networkId) -> o.uuid = networkId, o -> o.uuid)
                 .add()
                 .append(new KeyedCodec<>(CHECKED, Codec.BOOLEAN), (o, checked) -> o.checked = checked, o -> o.checked)
                 .add()
                 .append(new KeyedCodec<>(CREATE_ITEM, Codec.BOOLEAN), (o, createItem) -> o.createItem = createItem, o -> o.createItem)
                 .add()
-                .append(new KeyedCodec<>("File", Codec.STRING), (o, browserFile) -> o.browserFile = browserFile, o -> o.browserFile)
+                .append(new KeyedCodec<>(BROWSER_FILE, Codec.STRING), (o, browserFile) -> o.browserFile = browserFile, o -> o.browserFile)
                 .add()
-                .append(new KeyedCodec<>("@BrowserRoot", Codec.STRING), (o, browserRootStr) -> o.browserRootStr = browserRootStr, o -> o.browserRootStr)
+                .append(new KeyedCodec<>(BROWSER_ROOT, Codec.STRING), (o, browserRootStr) -> o.browserRootStr = browserRootStr, o -> o.browserRootStr)
                 .add()
-                .append(new KeyedCodec<>("@BrowserSearch", Codec.STRING), (o, browserSearchStr) -> o.browserSearchStr = browserSearchStr, o -> o.browserSearchStr)
+                .append(new KeyedCodec<>(BROWSER_SEARCH, Codec.STRING), (o, browserSearchStr) -> o.browserSearchStr = browserSearchStr, o -> o.browserSearchStr)
                 .add()
                 .build();
         public PageData.Action action;
         public String tab;
         public String name;
-        public String networkId;
+        public String uuid;
         public String pack;
         public boolean checked;
         public boolean createItem;

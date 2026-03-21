@@ -1,8 +1,10 @@
 package dev.marggx.mcreator.services;
 
 import com.hypixel.hytale.assetstore.AssetPack;
+import com.hypixel.hytale.builtin.buildertools.prefablist.AssetPrefabFileProvider;
 import com.hypixel.hytale.component.Holder;
 import com.hypixel.hytale.math.vector.Vector3f;
+import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.asset.AssetModule;
 import com.hypixel.hytale.server.core.modules.entity.component.HeadRotation;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
@@ -12,6 +14,7 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import dev.marggx.mcreator.data.blockymodel.BlockymodelVector3d;
 import dev.marggx.mcreator.data.extras.BaseModel;
 import dev.marggx.mcreator.data.extras.Model;
+import dev.marggx.mcreator.utils.Logger;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 import java.io.IOException;
@@ -24,16 +27,41 @@ import java.util.Map;
 public class HytaleService {
 
     private static final HytaleService INSTANCE = new HytaleService();
+    private static final Logger LOGGER = Logger.get();
+    private final AssetPrefabFileProvider assetProvider = new AssetPrefabFileProvider();
     public static HytaleService get() {
         return INSTANCE;
     }
 
     public List<Holder<EntityStore>> getEntitiesFromPrefab(String prefabPath) {
         Path path = PrefabStore.get().findAssetPrefabPath(prefabPath);
-        if (path == null) return null;
+        if (path == null) {
+            LOGGER.severe("Prefab not found: " + prefabPath);
+            return null;
+        }
 
         BlockSelection prefab = PrefabStore.get().getPrefab(path);
         return getEntitiesFromBlockSelection(prefab);
+    }
+
+    public BlockSelection getBlockSelectionFromPrefab(String prefabPath) {
+        Path path = this.assetProvider.resolveVirtualPath(prefabPath);
+        path = path != null ? path : PrefabStore.get().findAssetPrefabPath(prefabPath);
+        BlockSelection prefab = null;
+        if (path == null) {
+            try {
+                prefab = PrefabStore.get().getServerPrefab(prefabPath);
+            } catch (Exception e) {
+                LOGGER.severe("Failed to load prefab from path '%s': %s", prefabPath, e.getMessage());
+            }
+        } else {
+            try {
+                prefab = PrefabStore.get().getPrefab(path);
+            } catch (Exception e) {
+                LOGGER.severe("Failed to load prefab from path '%s': %s", prefabPath, e.getMessage());
+            }
+        }
+        return prefab;
     }
 
     public List<Holder<EntityStore>> getEntitiesFromBlockSelection(BlockSelection selection) {

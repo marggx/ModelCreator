@@ -234,25 +234,26 @@ public class BlockymodelService {
         for (Blockymodel node : nodes) {
             if (node.name.equals("Head")) {
                 node.orientation = rotation;
-                return true;
+                changed = true;
             }
 
-            if (setHeadRotation(node, rotation)) return true;
+            if (setHeadRotation(node, rotation)) changed = true;
         }
         return changed;
     }
 
     private boolean setHeadRotation(Blockymodel blockymodel, BlockymodelQuaternion rotation) {
+        boolean changed = false;
         if (blockymodel.name.equals("Head")) {
             blockymodel.orientation = rotation;
-            return true;
+            changed = true;
         }
 
-        if (blockymodel.children == null) return false;
+        if (blockymodel.children == null) return changed;
         for (Blockymodel child : blockymodel.children) {
-            if (setHeadRotation(child, rotation)) return true;
+            if (setHeadRotation(child, rotation)) changed = true;
         }
-        return false;
+        return changed;
     }
 
     private void scaleBlockymodel(Blockymodel model, double scale) {
@@ -279,6 +280,8 @@ public class BlockymodelService {
         int counter = 0;
         Blockymodel[] nodes = base.getNodes();
 
+        if (nodes == null || nodes.length == 0) return 0;
+
         for (Blockymodel node : nodes) {
             counter += countNodes(node);
             counter++;
@@ -287,9 +290,11 @@ public class BlockymodelService {
         return counter;
     }
 
-    public int countNodes(Blockymodel blockyNode) {
+    private int countNodes(Blockymodel blockyNode) {
         int counter = 0;
         Blockymodel[] nodes = blockyNode.children;
+
+        if (nodes == null || nodes.length == 0) return counter;
 
         for (Blockymodel node : nodes) {
             counter += countNodes(node);

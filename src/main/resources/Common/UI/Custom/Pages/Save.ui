@@ -37,7 +37,7 @@ $C.@PageOverlay #MainPage {
   }
   Group #Main {
     Anchor: (Width: 500);
-    $C.@Container #Selection {
+    $C.@Container #SelectionView {
       Visible: true;
       #Title {
         $C.@Title {
@@ -133,7 +133,7 @@ $C.@PageOverlay #MainPage {
         }
       }
     }
-    $C.@Container #Prefab {
+    $C.@Container #PrefabView {
       Visible: false;
       #Title {
         $C.@Title {
@@ -146,9 +146,9 @@ $C.@PageOverlay #MainPage {
         Label #PrefabNotification {
           Anchor: (Bottom: 0);
           Padding: (Bottom: 8);
-          Visible: true;
+          Visible: false;
           Style: (FontSize: 16, TextColor: @Red, Wrap: true);
-          Text: %mcreator.ui.WIP;
+          Text: "";
         }
         Group #Settings {
           LayoutMode: Top;
@@ -180,7 +180,8 @@ $C.@PageOverlay #MainPage {
                Anchor: (Height: 40, Left: 8, Right: 8);
                FlexWeight: 1;
                MaxLength: 4096;
-              PlaceholderText: %mcreator.ui.save.prefabSelectionPlaceholder;
+               PlaceholderText: %mcreator.ui.save.prefabSelectionPlaceholder;
+               IsReadOnly: true;
              }
 
              $C.@SecondaryTextButton #BrowseButton {

@@ -40,13 +40,14 @@ public class ModelCreatorCommand extends AbstractCommandCollection {
             assert playerComponent != null;
 
             if (!PrototypePlayerBuilderToolSettings.isOkayToDoCommandsOnSelection(ref, playerComponent, store)) {
+                playerComponent.getPageManager().openCustomPage(ref, store, new SavePage(playerRef, null));
                 return;
             }
 
             BuilderToolsPlugin.BuilderState builderState = BuilderToolsPlugin.getState(playerComponent, playerRef);
             BlockSelection builderStateSelection = builderState.getSelection();
             if (builderStateSelection == null) {
-                playerRef.sendMessage(Message.translation("server.commands.clear.noSelection"));
+                playerComponent.getPageManager().openCustomPage(ref, store, new SavePage(playerRef, null));
                 return;
             }
 

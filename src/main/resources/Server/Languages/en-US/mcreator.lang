@@ -18,6 +18,7 @@ ui.error.createPack = Create a custom pack first!
 ui.error.noName = You have to enter a name for the blockymodel!
 ui.error.noSelection = You have to select something!
 ui.error.noEntities = You need to have at least one entity selected!
+ui.error.invalidFile = Prefab file not found!
 ui.save.success = Blockymodel created successfully in Pack: {pack}!
 ui.save.error = An error occurred while creating the blockymodel!
 command.desc = Create a blockymodel from your selection.
