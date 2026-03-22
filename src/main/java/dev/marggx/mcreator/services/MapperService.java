@@ -118,7 +118,6 @@ public class MapperService {
 
         handleScale(base, model, holder, blockymodelBase);
 
-
         handleHeadRotation(rotationVector, model, holder, blockymodelBase);
 
         BlockymodelVector3d offset = BlockymodelVector3d.from(new Vector3d(0, -16.0, 0));
@@ -215,9 +214,9 @@ public class MapperService {
         double addZ = 32.0;
         if (base.selection() != null) {
             int subX = base.selection().getSelectionMax().getX() - base.selection().getSelectionMin().getX();
-            addX *= (subX != 0 ? 1 + subX : 0);
+            addX *= (subX != 0 ? 1 + subX : 1);
             int subZ = base.selection().getSelectionMax().getZ() - base.selection().getSelectionMin().getZ();
-            addZ *= (subZ != 0 ? 1 + subZ : 0);
+            addZ *= (subZ != 0 ? 1 + subZ : 1);
         }
 
         position.add(addX, 16.0, addZ);
