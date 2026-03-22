@@ -1,4 +1,5 @@
 # Model Creator
+![Cover](img/cover.png)
 
 A Plugin that allows you to create **Blockymodels directly from in-game entities**.
 
