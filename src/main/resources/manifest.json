@@ -1,7 +1,7 @@
 {
     "Group": "Marggx",
     "Name": "ModelCreator",
-    "Version": "1.1.1",
+    "Version": "1.2.0",
     "Description": "A Plugin that allows you to create Blockymodels directly from in-game entities.",
     "Authors": [
         {
