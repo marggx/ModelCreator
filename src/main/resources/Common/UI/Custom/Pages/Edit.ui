@@ -1,0 +1,180 @@
+$C = "../Common.ui";
+$Sounds = "../Sounds.ui";
+
+@FloatField = Group {
+  @LabelText = "";
+  LayoutMode: Left;
+  Anchor: (Width: 110);
+
+  Label #Label {
+    Anchor: (Left: 0, Top: 8);
+    Text: @LabelText;
+    Style: $C.@DefaultLabelStyle;
+  }
+  $C.@TextField #Input {
+    @Anchor = (Left: 8, Right: 8);
+    FlexWeight: 1;
+    MaxLength: 1024;
+    Value: "";
+  }
+};
+
+
+Group {
+  LayoutMode: Middle;
+  Group {
+    LayoutMode: Left;
+    Anchor: (Left: 10);
+    $C.@DecoratedContainer {
+      Anchor: (Width: 350);
+      #Title {
+        $C.@Title {
+          @Text = %mcreator.ui.edit.title;
+        }
+      }
+
+      #Content {
+        LayoutMode: Top;
+        Padding: (Full: 16);
+        Group #Uuid {
+          LayoutMode: Top;
+          Anchor: (Bottom: 16);
+          Label {
+            Text: %mcreator.ui.edit.uuid;
+            Anchor: (Bottom: 2);
+            Style: (...$C.@DefaultLabelStyle, FontSize: 14, RenderBold: true);
+          }
+          Label #Label {
+            Text: "";
+            Style: $C.@DefaultLabelStyle;
+          }
+        }
+        Group #Model {
+          LayoutMode: Top;
+          Visible: false;
+          Anchor: (Bottom: 16);
+          Label {
+            Text: %mcreator.ui.edit.model;
+            Anchor: (Bottom: 2);
+            Style: (...$C.@DefaultLabelStyle, FontSize: 14, RenderBold: true);
+          }
+          Label #Label {
+            Text: "";
+            Style: $C.@DefaultLabelStyle;
+          }
+        }
+        Group #Item {
+          LayoutMode: Top;
+          Visible: false;
+          Anchor: (Bottom: 16);
+          Label {
+            Text: %mcreator.ui.edit.item;
+            Anchor: (Bottom: 2);
+            Style: (...$C.@DefaultLabelStyle, FontSize: 14, RenderBold: true);
+          }
+          Label #Label {
+            Text: "";
+            Style: $C.@DefaultLabelStyle;
+          }
+        }
+        Group #Pos {
+          LayoutMode: Top;
+          Anchor: (Bottom: 16);
+          Label {
+            Text: %mcreator.ui.edit.pos;
+            Anchor: (Bottom: 2);
+            Style: (...$C.@DefaultLabelStyle, FontSize: 14, RenderBold: true);
+          }
+          Group {
+            LayoutMode: Left;
+            @FloatField #X {
+              @LabelText = "X:";
+            }
+            @FloatField #Y {
+              @LabelText = "Y:";
+            }
+            @FloatField #Z {
+              @LabelText = "Z:";
+            }
+          }
+        }
+        Group #Rot {
+          LayoutMode: Top;
+          Anchor: (Bottom: 16);
+          Label {
+            Text: %mcreator.ui.edit.rot;
+            Anchor: (Bottom: 2);
+            Style: (...$C.@DefaultLabelStyle, FontSize: 14, RenderBold: true);
+          }
+          Group {
+            LayoutMode: Left;
+            @FloatField #Pitch {
+              @LabelText = "X:";
+            }
+            @FloatField #Yaw {
+              @LabelText = "Y:";
+            }
+            @FloatField #Roll {
+              @LabelText = "Z:";
+            }
+          }
+        }
+        Group #HeadRot {
+          LayoutMode: Top;
+          Visible: false;
+          Anchor: (Bottom: 16);
+          Label {
+            Text: %mcreator.ui.edit.headRot;
+            Anchor: (Bottom: 2);
+            Style: (...$C.@DefaultLabelStyle, FontSize: 14, RenderBold: true);
+          }
+          Group {
+            LayoutMode: Left;
+            @FloatField #Pitch {
+              @LabelText = "X:";
+            }
+            @FloatField #Yaw {
+              @LabelText = "Y:";
+            }
+            @FloatField #Roll {
+              @LabelText = "Z:";
+            }
+          }
+        }
+        Group #Scale {
+          LayoutMode: Top;
+          Visible: false;
+          Anchor: (Bottom: 16);
+          Label {
+            Text: %mcreator.ui.edit.scale;
+            Anchor: (Bottom: 2);
+            Style: (...$C.@DefaultLabelStyle, FontSize: 14, RenderBold: true);
+          }
+          Group {
+            LayoutMode: Left;
+            @FloatField {
+              @LabelText = "";
+            }
+          }
+
+        }
+        Group #Buttons {
+          LayoutMode: Center;
+          Anchor: (Top: 0);
+          $C.@TextButton #Save {
+            @Sounds = $Sounds.@SaveSettings;
+            @Anchor = (Right: 4);
+            Text: %mcreator.ui.edit.save;
+            FlexWeight: 1;
+          }
+          $C.@SecondaryTextButton #Cancel {
+            @Sounds = $Sounds.@ButtonsCancel;
+            @Anchor = (Left: 4);
+            Text: %server.customUI.cancel;
+            FlexWeight: 1;
+          }
+        }
+      }
+    }
+  }
+}

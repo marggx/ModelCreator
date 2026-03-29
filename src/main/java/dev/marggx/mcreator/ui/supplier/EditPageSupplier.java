@@ -1,0 +1,23 @@
+package dev.marggx.mcreator.ui.supplier;
+
+import com.hypixel.hytale.component.ComponentAccessor;
+import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.server.core.entity.InteractionContext;
+import com.hypixel.hytale.server.core.entity.entities.player.pages.CustomUIPage;
+import com.hypixel.hytale.server.core.modules.interaction.interaction.config.server.OpenCustomUIInteraction;
+import com.hypixel.hytale.server.core.universe.PlayerRef;
+import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import dev.marggx.mcreator.ui.EditPage;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+public class EditPageSupplier  implements OpenCustomUIInteraction.CustomPageSupplier {
+
+    @Nullable
+    public CustomUIPage tryCreate(@Nonnull Ref<EntityStore> ref, @Nonnull ComponentAccessor<EntityStore> componentAccessor, @Nonnull PlayerRef playerRef, @Nonnull InteractionContext context) {
+        Ref<EntityStore> targetEntity = context.getTargetEntity();
+        return targetEntity == null ? null : new EditPage(playerRef, targetEntity);
+    }
+}
+

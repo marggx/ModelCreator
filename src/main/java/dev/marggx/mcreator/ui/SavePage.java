@@ -1,6 +1,7 @@
 package dev.marggx.mcreator.ui;
 
 import com.hypixel.hytale.assetstore.AssetPack;
+import com.hypixel.hytale.builtin.buildertools.BuilderToolsPlugin;
 import com.hypixel.hytale.builtin.buildertools.prefabeditor.enums.PrefabRootDirectory;
 import com.hypixel.hytale.builtin.buildertools.prefablist.AssetPrefabFileProvider;
 import com.hypixel.hytale.codec.Codec;
@@ -243,6 +244,9 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
     public void handleDataEvent(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, @Nonnull PageData data) {
         Player playerComponent = store.getComponent(ref, Player.getComponentType());
         assert playerComponent != null;
+        PlayerRef playerRefComponent = store.getComponent(ref, PlayerRef.getComponentType());
+        assert playerRefComponent != null;
+
         UICommandBuilder uiBuilder = new UICommandBuilder();
         switch (data.action) {
             case TabSelection: {
@@ -313,14 +317,19 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
                     break;
                 }
 
-                boolean created = mapperService.createBlockymodelFromBlockSelection(models, selection, data.pack, data.name, data.createItem);
-                if (created) {
+                this.sendUpdate(uiBuilder);
+                BuilderToolsPlugin.addToQueue(
+                playerComponent,
+                playerRefComponent,
+                (r, builderState, componentAccessor) -> {
+                    boolean created = mapperService.createBlockymodelFromBlockSelection(models, selection, data.pack, data.name, data.createItem); if (created) {
                     NotificationUtil.sendNotificationToUniverse(Message.translation("mcreator.ui.save.success").param("pack", data.pack), NotificationStyle.Success);
                     playerComponent.getInventory().getCombinedHotbarFirst().addItemStack(new ItemStack(HytaleService.get().createValidItemName(data.name)));
-                } else {
-                    NotificationUtil.sendNotificationToUniverse(Message.translation("mcreator.ui.save.error").param("pack", data.pack), NotificationStyle.Danger);
-                }
-                playerComponent.getPageManager().setPage(ref, store, Page.None);
+                    } else {
+                        NotificationUtil.sendNotificationToUniverse(Message.translation("mcreator.ui.save.error").param("pack", data.pack), NotificationStyle.Danger);
+                    }
+                    playerComponent.getPageManager().setPage(ref, store, Page.None);
+                });
                 break;
             }
 

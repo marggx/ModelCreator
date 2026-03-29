@@ -1,0 +1,33 @@
+{
+  "TranslationProperties": {
+    "Name": "mcreator.tool.name",
+    "Description": "mcreator.tool.description"
+  },
+  "Icon": "Icons/Items/EditorTools/MCreator.png",
+  "Categories": [
+    "Tool.BuilderTool"
+  ],
+  "SubCategory": "BasicTools",
+  "Model": "Items/Tools/Brush/Brush.blockymodel",
+  "Texture": "Items/Tools/EditorTool_MCreator.png",
+  "MaxStack": 1,
+  "PlayerAnimationsId": "Item",
+  "BuilderTool": {
+    "Id": "Entity",
+    "IsBrush": false
+  },
+  "Interactions": {
+    "Primary": "MCreatorRootInteraction",
+    "Secondary": "MCreatorRootInteraction",
+    "Ability3": "MCreatorCommandRootInteraction"
+  },
+  "InteractionConfig": {
+    "DebugOutlines": true,
+    "UseDistance": {
+      "Adventure": 128,
+      "Creative": 128
+    },
+    "AllEntities": true
+  },
+  "Quality": "Tool"
+}

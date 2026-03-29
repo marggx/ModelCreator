@@ -29,7 +29,7 @@ public class ModelCreatorCommand extends AbstractCommandCollection {
 
     public static class MCreatorCreate extends AbstractPlayerCommand {
         public MCreatorCreate() {
-            super("generate", "mcreator.command.desc");
+            super("generate", "mcreator.command.generate.desc");
             this.addAliases("g");
         }
 

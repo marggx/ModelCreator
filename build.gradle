@@ -26,6 +26,8 @@ ext {
     }
 }
 
+patchline="release"
+
 if (!project.hasProperty('hytaleHome')) {
     throw new GradleException('Your Hytale install could not be detected automatically. If you are on an unsupported platform or using a custom install location, please define the install location using the hytale_home property.');
 }
@@ -75,7 +77,7 @@ tasks.register('updatePluginManifest') {
 }
 
 tasks.register('fetchLatestServerVersion') {
-    def metadataUrl = 'https://maven.hytale.com/release/com/hypixel/hytale/Server/maven-metadata.xml'
+    def metadataUrl = "https://maven.hytale.com/$patchline/com/hypixel/hytale/Server/maven-metadata.xml"
     def propsFile   = file('gradle.properties')
     def manifestFile = file('src/main/resources/manifest.json')
     doLast {

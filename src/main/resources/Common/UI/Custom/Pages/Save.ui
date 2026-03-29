@@ -176,18 +176,18 @@ $C.@PageOverlay #MainPage {
               Anchor: (Left: 0, Top: 14);
               Style: $C.@DefaultLabelStyle;
             }
-             $C.@TextField #Input {
-               Anchor: (Height: 40, Left: 8, Right: 8);
-               FlexWeight: 1;
-               MaxLength: 4096;
-               PlaceholderText: %mcreator.ui.save.prefabSelectionPlaceholder;
-               IsReadOnly: true;
-             }
+            $C.@TextField #Input {
+              Anchor: (Height: 40, Left: 8, Right: 8);
+              FlexWeight: 1;
+              MaxLength: 4096;
+              PlaceholderText: %mcreator.ui.save.prefabSelectionPlaceholder;
+              IsReadOnly: true;
+            }
 
-             $C.@SecondaryTextButton #BrowseButton {
-               @Anchor = (Width: 120, Right: 0);
-               Text: %server.customUI.prefabEditorSettings.browse;
-             }
+            $C.@SecondaryTextButton #BrowseButton {
+              @Anchor = (Width: 120, Right: 0);
+              Text: %server.customUI.prefabEditorSettings.browse;
+            }
           }
           Group #SelectedEntities {
             LayoutMode: Top;
@@ -253,7 +253,6 @@ $C.@PageOverlay #MainPage {
   }
 }
 
-
 $C.@PageOverlay #BrowserPage {
   LayoutMode: Middle;
   Visible: false;
@@ -271,17 +270,20 @@ $C.@PageOverlay #BrowserPage {
       LayoutMode: Top;
       Padding: (Full: 16);
 
-      // Current path display
       Label #CurrentPath {
         Anchor: (Bottom: 8, Horizontal: 4);
-        Style: (...$C.@DefaultLabelStyle, FontSize: 12, TextColor: #6a7d8f);
+        Style: (
+          ...$C.@DefaultLabelStyle,
+          FontSize: 12,
+          TextColor: #6a7d8f,
+        );
         Text: "";
       }
 
-      // Shared browser content (root selector + file list)
       Group #BrowserContent {
         FlexWeight: 1;
-        $Browser.@PrefabBrowserContent {}
+        $Browser.@PrefabBrowserContent {
+        }
       }
 
       Group #BrowserButtons {
