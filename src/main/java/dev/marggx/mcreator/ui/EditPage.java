@@ -31,8 +31,6 @@ import dev.marggx.mcreator.utils.Logger;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 
 import javax.annotation.Nonnull;
-import java.util.HashMap;
-import java.util.Map;
 
 public class EditPage extends InteractiveCustomUIPage<EditPage.PageData> {
     private static final Logger LOGGER = Logger.get();
@@ -83,23 +81,23 @@ public class EditPage extends InteractiveCustomUIPage<EditPage.PageData> {
         if (transform != null) {
             originalTransform = transform.clone();
             Vector3d pos = transform.getPosition();
-            LOGGER.info("Position: " + pos);
-            buildValueField(cBuilder, eBuilder, PageData.Selector.PosX, PageData.InputType.Float, String.valueOf(MathUtil.round(pos.x, 2)));
-            buildValueField(cBuilder, eBuilder, PageData.Selector.PosY, PageData.InputType.Float, String.valueOf(MathUtil.round(pos.y, 2)));
-            buildValueField(cBuilder, eBuilder, PageData.Selector.PosZ, PageData.InputType.Float, String.valueOf(MathUtil.round(pos.z, 2)));
+            buildValueField(cBuilder, eBuilder, PageData.Selector.PosX, PageData.InputType.Float, String.valueOf(MathUtil.round(pos.x, 2)), true);
+            buildValueField(cBuilder, eBuilder, PageData.Selector.PosY, PageData.InputType.Float, String.valueOf(MathUtil.round(pos.y, 2)), true);
+            buildValueField(cBuilder, eBuilder, PageData.Selector.PosZ, PageData.InputType.Float, String.valueOf(MathUtil.round(pos.z, 2)), true);
 
-            Vector3f rot = transform.getRotation();
-            LOGGER.info("Rotation: " + rot);
-            buildValueField(cBuilder, eBuilder, PageData.Selector.RotPitch, PageData.InputType.Float, String.valueOf(MathUtil.round(rot.x, 2)));
-            buildValueField(cBuilder, eBuilder, PageData.Selector.RotYaw, PageData.InputType.Float, String.valueOf(MathUtil.round(rot.y, 2)));
-            buildValueField(cBuilder, eBuilder, PageData.Selector.RotRoll, PageData.InputType.Float, String.valueOf(MathUtil.round(rot.z, 2)));
+            if (model != null) {
+                cBuilder.set("#Rot.Visible", true);
+                Vector3f rot = transform.getRotation();
+                buildValueField(cBuilder, eBuilder, PageData.Selector.RotPitch, PageData.InputType.Float, String.valueOf(MathUtil.round(rot.x, 2)));
+                buildValueField(cBuilder, eBuilder, PageData.Selector.RotYaw, PageData.InputType.Float, String.valueOf(MathUtil.round(rot.y, 2)));
+                buildValueField(cBuilder, eBuilder, PageData.Selector.RotRoll, PageData.InputType.Float, String.valueOf(MathUtil.round(rot.z, 2)));
+            }
         }
 
         if (headRotation != null) {
             originalHeadRotation = headRotation.clone();
             Vector3f rot = headRotation.getRotation();
             cBuilder.set("#HeadRot.Visible", true);
-            LOGGER.info("Head Rotation: " + rot);
             buildValueField(cBuilder, eBuilder, PageData.Selector.HeadRotPitch, PageData.InputType.Float, String.valueOf(MathUtil.round(rot.x, 2)));
             buildValueField(cBuilder, eBuilder, PageData.Selector.HeadRotYaw, PageData.InputType.Float, String.valueOf(MathUtil.round(rot.y, 2)));
             buildValueField(cBuilder, eBuilder, PageData.Selector.HeadRotRoll, PageData.InputType.Float, String.valueOf(MathUtil.round(rot.z, 2)));
@@ -125,9 +123,12 @@ public class EditPage extends InteractiveCustomUIPage<EditPage.PageData> {
     }
 
     private void buildValueField(UICommandBuilder cBuilder, @NonNullDecl UIEventBuilder eBuilder, PageData.Selector selector, PageData.InputType type, String value) {
+        buildValueField(cBuilder, eBuilder, selector, type, value, false);
+    }
+    private void buildValueField(UICommandBuilder cBuilder, @NonNullDecl UIEventBuilder eBuilder, PageData.Selector selector, PageData.InputType type, String value, boolean useFocusLost) {
         cBuilder.set(selector.getValue(), value);
         eBuilder.addEventBinding(
-                CustomUIEventBindingType.ValueChanged, removeValueFromString(selector.getValue()),
+                useFocusLost ? CustomUIEventBindingType.FocusLost : CustomUIEventBindingType.ValueChanged, removeValueFromString(selector.getValue()),
                 new EventData().append(PageData.ACTION, PageData.Action.ValueChanged)
                         .append(PageData.SELECTOR, selector.getValue())
                         .append(PageData.VALUE, selector.getValue())

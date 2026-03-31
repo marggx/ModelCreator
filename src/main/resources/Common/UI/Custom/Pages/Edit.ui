@@ -100,6 +100,7 @@ Group {
         }
         Group #Rot {
           LayoutMode: Top;
+          Visible: false;
           Anchor: (Bottom: 16);
           Label {
             Text: %mcreator.ui.edit.rot;
