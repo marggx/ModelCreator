@@ -47,7 +47,7 @@ jobs:
         if: steps.cache-hytale.outputs.cache-hit != 'true'
         run: |
           LATEST_VERSION="${{ steps.hytale-version.outputs.version }}"
-          JAR_DIR="${{ runner.temp }}/hytale-home/install/release/package/game/latest/Server"
+          JAR_DIR="${{ runner.temp }}/hytale-home/"
           mkdir -p "$JAR_DIR"
           echo "Downloading Hytale Server version: $LATEST_VERSION"
           curl -L "https://maven.hytale.com/release/com/hypixel/hytale/Server/${LATEST_VERSION}/Server-${LATEST_VERSION}.jar" \
@@ -57,7 +57,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build with Gradle
-        run: ./gradlew build -Phytale_home="${{ runner.temp }}/hytale-home"
+        run: ./gradlew build -Pjar_dir="${{ runner.temp }}/hytale-home"
 
       - name: Commit and push updated files
         run: |
