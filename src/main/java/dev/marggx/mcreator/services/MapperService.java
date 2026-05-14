@@ -2,8 +2,7 @@ package dev.marggx.mcreator.services;
 
 import com.hypixel.hytale.component.Holder;
 import com.hypixel.hytale.math.util.MathUtil;
-import com.hypixel.hytale.math.vector.Vector3d;
-import com.hypixel.hytale.math.vector.Vector3f;
+import com.hypixel.hytale.math.vector.Rotation3f;
 import com.hypixel.hytale.server.core.HytaleServer;
 import com.hypixel.hytale.server.core.modules.entity.component.EntityScaleComponent;
 import com.hypixel.hytale.server.core.modules.entity.component.HeadRotation;
@@ -17,6 +16,7 @@ import dev.marggx.mcreator.data.extras.BaseModel;
 import dev.marggx.mcreator.data.extras.Model;
 import dev.marggx.mcreator.utils.Logger;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import org.joml.Vector3d;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -99,7 +99,7 @@ public class MapperService {
 
         BlockymodelVector3d position = BlockymodelVector3d.from(transform.getPosition());
         HeadRotation headRotation = holder.getComponent(HeadRotation.getComponentType());
-        Vector3f rotationVector = createRotationVector(model, headRotation, transform);
+        Rotation3f rotationVector = createRotationVector(model, headRotation, transform);
 
         BlockymodelBase blockymodelBase = blockymodelService.loadBlockymodelBase(model.path());
         if (blockymodelBase == null) {
@@ -108,7 +108,7 @@ public class MapperService {
         }
         model.setBlockymodel(blockymodelBase);
 
-        BlockymodelQuaternion orientation = BlockymodelQuaternion.fromVector3f(rotationVector);
+        BlockymodelQuaternion orientation = BlockymodelQuaternion.fromRotation3f(rotationVector);
 
         textureService.handleTexture(model, base);
 
@@ -176,18 +176,18 @@ public class MapperService {
         return hytaleService.deduplicateModels(list);
     }
 
-    public Vector3f createRotationVector(Model model, HeadRotation headRotation, TransformComponent transform) {
-        Vector3f rotation = new Vector3f();
+    public Rotation3f createRotationVector(Model model, HeadRotation headRotation, TransformComponent transform) {
+        Rotation3f rotation = new Rotation3f();
         if (headRotation == null) {
-            return rotation.assign(transform.getRotation());
+            return rotation.set(transform.getRotation());
         }
 
         if (hasTransformRotation(model, headRotation, transform)) {
-            rotation.assign(transform.getRotation());
+            rotation.set(transform.getRotation());
             return rotation;
         }
 
-        rotation.assign(headRotation.getRotation());
+        rotation.set(headRotation.getRotation());
 
         return rotation;
     }
@@ -195,28 +195,29 @@ public class MapperService {
     private boolean hasTransformRotation(Model model, HeadRotation headRotation, TransformComponent transform) {
         if (headRotation == null) return false;
         if (model.getType() == Model.ModelType.MODEL) return true;
-        return headRotation.getRotation().getX() == 0.0f && headRotation.getRotation().getZ() == 0.0f && (transform.getRotation().getX() != 0.0f || transform.getRotation().getZ() != 0.0f);
+        if (model.getType() == Model.ModelType.BLOCK) return true;
+        return headRotation.getRotation().x() == 0.0f && headRotation.getRotation().z() == 0.0f && (transform.getRotation().x() != 0.0f || transform.getRotation().z() != 0.0f);
     }
 
     private void handlePosition(BaseModel base, BlockymodelVector3d position, BlockymodelVector3d offset, boolean hasTransformRotation) {
-        position.setX(-position.getX());
-        position.setZ(-position.getZ());
+        position.x = -position.x();
+        position.z = -position.z();
 
         //One Hytale unit = 32 Blockbench units
-        position.scale(32.0);
+        position.mul(32.0);
 
         if (hasTransformRotation) {
-            offset.setY(0.0);
-            position.setY(position.getY() - 16.0);
+            offset.y = 0.0;
+            position.y = position.y() - 16.0;
         }
 
         double addX = 32.0;
         double addZ = 32.0;
         if (base.selection() != null) {
-            int subX = base.selection().getSelectionMax().getX() - base.selection().getSelectionMin().getX();
-            addX *= (subX != 0 ? 1 + subX : 1);
-            int subZ = base.selection().getSelectionMax().getZ() - base.selection().getSelectionMin().getZ();
-            addZ *= (subZ != 0 ? 1 + subZ : 1);
+            int subX = base.selection().getSelectionMax().x() - base.selection().getSelectionMin().x();
+            addX *= (subX != 0 ? 1 + subX : 0.5);
+            int subZ = base.selection().getSelectionMax().z() - base.selection().getSelectionMin().z();
+            addZ *= (subZ != 0 ? 1 + subZ : 0.5);
         }
 
         position.add(addX, 16.0, addZ);
@@ -236,7 +237,7 @@ public class MapperService {
         blockymodelService.scaleBlockymodel(blockymodelBase, scale);
     }
 
-    private void handleHeadRotation(Vector3f baseOrientation, Model model, Holder<EntityStore> holder, BlockymodelBase blockymodelBase) {
+    private void handleHeadRotation(Rotation3f baseOrientation, Model model, Holder<EntityStore> holder, BlockymodelBase blockymodelBase) {
         if (model.getType() != Model.ModelType.MODEL) {
             return;
         }

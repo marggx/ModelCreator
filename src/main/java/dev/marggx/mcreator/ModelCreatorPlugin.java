@@ -1,8 +1,10 @@
 package dev.marggx.mcreator;
+import com.hypixel.hytale.server.core.modules.interaction.interaction.config.Interaction;
 import com.hypixel.hytale.server.core.modules.interaction.interaction.config.server.OpenCustomUIInteraction;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import dev.marggx.mcreator.commands.ModelCreatorCommand;
+import dev.marggx.mcreator.interactions.GenerateInteraction;
 import dev.marggx.mcreator.ui.EditPage;
 import dev.marggx.mcreator.ui.supplier.EditPageSupplier;
 import dev.marggx.mcreator.utils.Logger;
@@ -22,6 +24,8 @@ public class ModelCreatorPlugin extends JavaPlugin {
         this.getCommandRegistry().registerCommand(new ModelCreatorCommand());
 
         OpenCustomUIInteraction.registerCustomPageSupplier(this, EditPage.class, "EditPage", new EditPageSupplier());
+
+        this.getCodecRegistry(Interaction.CODEC).register("MCreatorGenerate", GenerateInteraction.class, GenerateInteraction.CODEC);
     }
 
     @Override

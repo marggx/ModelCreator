@@ -3,8 +3,7 @@ package dev.marggx.mcreator.services;
 import com.hypixel.hytale.assetstore.AssetPack;
 import com.hypixel.hytale.builtin.buildertools.prefablist.AssetPrefabFileProvider;
 import com.hypixel.hytale.component.Holder;
-import com.hypixel.hytale.math.vector.Vector3f;
-import com.hypixel.hytale.server.core.Message;
+import com.hypixel.hytale.math.vector.Rotation3f;
 import com.hypixel.hytale.server.core.asset.AssetModule;
 import com.hypixel.hytale.server.core.modules.entity.component.HeadRotation;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
@@ -65,10 +64,10 @@ public class HytaleService {
     }
 
     public List<Holder<EntityStore>> getEntitiesFromBlockSelection(BlockSelection selection) {
-        int xMin = selection.getSelectionMin().getX();
-        int zMin = selection.getSelectionMin().getZ();
-        int width = selection.getSelectionMax().getX() - xMin;
-        int depth = selection.getSelectionMax().getZ() - zMin;
+        int xMin = selection.getSelectionMin().x();
+        int zMin = selection.getSelectionMin().z();
+        int width = selection.getSelectionMax().x() - xMin;
+        int depth = selection.getSelectionMax().z() - zMin;
         List<Holder<EntityStore>> entities = new ObjectArrayList<>();
         selection.forEachEntity(e -> entities.add(e.clone()));
         entities.forEach((e) -> {
@@ -89,7 +88,7 @@ public class HytaleService {
 
             BlockymodelVector3d position = BlockymodelVector3d.from(transform.getPosition());
             HeadRotation headRotation = holder.getComponent(HeadRotation.getComponentType());
-            Vector3f rotationVector = MapperService.get().createRotationVector(model, headRotation, transform);
+            Rotation3f rotationVector = MapperService.get().createRotationVector(model, headRotation, transform);
             String cacheKey = model.id() + position + rotationVector;
             if (modelCache.containsKey(cacheKey)) {
                 continue;

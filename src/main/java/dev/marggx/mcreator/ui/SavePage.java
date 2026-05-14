@@ -21,6 +21,7 @@ import com.hypixel.hytale.server.core.asset.AssetModule;
 import com.hypixel.hytale.server.core.entity.UUIDComponent;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.entity.entities.player.pages.InteractiveCustomUIPage;
+import com.hypixel.hytale.server.core.inventory.InventoryComponent;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.modules.singleplayer.SingleplayerModule;
 import com.hypixel.hytale.server.core.prefab.PrefabStore;
@@ -181,23 +182,23 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
         uiCommandBuilder.set("#BrowserPage.Visible", false);
     }
 
-    private void setupBasedOnModel(String tab, UICommandBuilder uiCommandBuilder, UIEventBuilder uiEventBuilder) {
+    private void setupBasedOnModel(String tab, UICommandBuilder uiCBuilder, UIEventBuilder uiEventBuilder) {
         int counter = 0;
         List<Model> models = tab.equals("#PrefabView") ? modelsPrefab : modelsSelection;
         List<Model> unselected = tab.equals("#PrefabView") ? unselectedModelsPrefab : unselectedModelsSelection;
         if (models.isEmpty()) {
-            uiCommandBuilder.set(tab + " #SelectedEntities #Label.Text", Message.translation("mcreator.ui.save.selectedEntitiesLabel").param("count", 0));
+            uiCBuilder.set(tab + " #SelectedEntities #Label.Text", Message.translation("mcreator.ui.save.selectedEntitiesLabel").param("count", 0));
             return;
         }
         for (Model model : models) {
-            buildEntityEntry(counter, model, tab, true, uiCommandBuilder, uiEventBuilder);
+            buildEntityEntry(counter, model, tab, true, uiCBuilder, uiEventBuilder);
             counter++;
         }
         for (Model model : unselected) {
-            buildEntityEntry(counter, model, tab, false, uiCommandBuilder, uiEventBuilder);
+            buildEntityEntry(counter, model, tab, false, uiCBuilder, uiEventBuilder);
             counter++;
         }
-        uiCommandBuilder.set(tab + " #SelectedEntities #Label.Text", Message.translation("mcreator.ui.save.selectedEntitiesLabel").param("count", models.size()));
+        uiCBuilder.set(tab + " #SelectedEntities #Label.Text", Message.translation("mcreator.ui.save.selectedEntitiesLabel").param("count", models.size()));
     }
 
     private void buildEntityEntry(int counter, Model model, String tab, boolean selected, UICommandBuilder uiCommandBuilder, UIEventBuilder uiEventBuilder) {
@@ -322,9 +323,12 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
                 playerComponent,
                 playerRefComponent,
                 (r, builderState, componentAccessor) -> {
-                    boolean created = mapperService.createBlockymodelFromBlockSelection(models, selection, data.pack, data.name, data.createItem); if (created) {
-                    NotificationUtil.sendNotificationToUniverse(Message.translation("mcreator.ui.save.success").param("pack", data.pack), NotificationStyle.Success);
-                    playerComponent.getInventory().getCombinedHotbarFirst().addItemStack(new ItemStack(HytaleService.get().createValidItemName(data.name)));
+                    boolean created = mapperService.createBlockymodelFromBlockSelection(models, selection, data.pack, data.name, data.createItem);
+                    if (created) {
+                        NotificationUtil.sendNotificationToUniverse(Message.translation("mcreator.ui.save.success").param("pack", data.pack), NotificationStyle.Success);
+                        InventoryComponent.Hotbar inventory = componentAccessor.getComponent(r, InventoryComponent.Hotbar.getComponentType());
+                        assert inventory != null;
+                        inventory.getInventory().addItemStack(new ItemStack(HytaleService.get().createValidItemName(data.name)));
                     } else {
                         NotificationUtil.sendNotificationToUniverse(Message.translation("mcreator.ui.save.error").param("pack", data.pack), NotificationStyle.Danger);
                     }

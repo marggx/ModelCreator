@@ -5,8 +5,6 @@ import com.hypixel.hytale.server.core.asset.type.model.config.ModelAttachment;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import dev.marggx.mcreator.data.blockymodel.BlockymodelBase;
 
-import java.util.List;
-
 public class Model {
     private String id;
     private BlockymodelBase blockymodel;
