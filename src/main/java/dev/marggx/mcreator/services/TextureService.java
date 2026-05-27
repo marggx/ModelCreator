@@ -1,7 +1,6 @@
 package dev.marggx.mcreator.services;
 
 import com.hypixel.hytale.assetstore.AssetPack;
-import com.hypixel.hytale.math.util.MathUtil;
 import com.hypixel.hytale.server.core.asset.AssetModule;
 import dev.marggx.mcreator.data.blockymodel.Blockymodel;
 import dev.marggx.mcreator.data.blockymodel.BlockymodelBase;
@@ -14,12 +13,9 @@ import javax.annotation.Nonnull;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 
 public class TextureService {
 
@@ -27,49 +23,6 @@ public class TextureService {
     private static final Logger LOGGER = Logger.get();
     public static TextureService get() {
         return INSTANCE;
-    }
-
-    public void combineFiles(List<File> files, File output) throws Exception {
-        List<BufferedImage> images = new ArrayList<>();
-
-        int maxWidth = 0;
-        int totalHeight = 0;
-
-        for (File file : files) {
-            BufferedImage img = ImageIO.read(file);
-            if (img == null) {
-                throw new RuntimeException("Failed to read: " + file);
-            }
-
-            images.add(img);
-
-            if (img.getWidth() > maxWidth) {
-                maxWidth = img.getWidth();
-            }
-
-            totalHeight += img.getHeight();
-        }
-
-        BufferedImage combined = new BufferedImage(
-                maxWidth,
-                totalHeight,
-                BufferedImage.TYPE_INT_ARGB
-        );
-
-        Graphics2D g = combined.createGraphics();
-
-        g.setBackground(new java.awt.Color(0,0,0,0));
-        g.clearRect(0, 0, maxWidth, totalHeight);
-
-        int y = 0;
-        for (BufferedImage img : images) {
-            g.drawImage(img, 0, y, null);
-            y += img.getHeight();
-        }
-
-        g.dispose();
-
-        ImageIO.write(combined, "PNG", output);
     }
 
     public BufferedImage combineImages(BufferedImage img1, BufferedImage img2) {
@@ -152,21 +105,6 @@ public class TextureService {
         }
 
         return null;
-    }
-
-    public BufferedImage scaleImage(BufferedImage img, double scale) {
-        if (scale == 1.0) return img;
-        int w = (int) MathUtil.fastRound(img.getWidth() * scale);
-        int h = (int) MathUtil.fastRound(img.getHeight() * scale);
-        BufferedImage scaled = new BufferedImage(w, h,
-                BufferedImage.TYPE_INT_ARGB);
-
-        Graphics2D g = scaled.createGraphics();
-        this.setRenderHints(g);
-        g.setBackground(new java.awt.Color(0,0,0,0));
-        g.drawImage(img, 0, 0, w, h, null);
-        g.dispose();
-        return scaled;
     }
 
     private void setRenderHints(Graphics2D g) {

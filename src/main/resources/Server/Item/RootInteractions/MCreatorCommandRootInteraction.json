@@ -4,9 +4,6 @@
     "ClickBypass": true
   },
   "Interactions": [
-    {
-      "Type": "Command",
-      "Command": "mcreator generate"
-    }
+    "MCreatorCommand"
   ]
 }

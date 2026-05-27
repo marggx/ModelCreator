@@ -259,15 +259,15 @@ public class BlockymodelService {
 
     private void scaleBlockymodel(Blockymodel model, double scale) {
         if (model.position != null) {
-            model.position.scale(scale);
+            model.position.mul(scale);
         }
 
         if (model.shape != null) {
             if (model.shape.stretch != null) {
-                model.shape.stretch.scale(scale);
+                model.shape.stretch.mul(scale);
             }
             if (model.shape.offset != null) {
-                model.shape.offset.scale(scale);
+                model.shape.offset.mul(scale);
             }
         }
 

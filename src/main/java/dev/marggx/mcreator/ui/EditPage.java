@@ -8,8 +8,7 @@ import com.hypixel.hytale.component.Archetype;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.math.util.MathUtil;
-import com.hypixel.hytale.math.vector.Vector3d;
-import com.hypixel.hytale.math.vector.Vector3f;
+import com.hypixel.hytale.math.vector.Rotation3f;
 import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.protocol.packets.interface_.Page;
@@ -29,6 +28,7 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import dev.marggx.mcreator.utils.Logger;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
+import org.joml.Vector3d;
 
 import javax.annotation.Nonnull;
 
@@ -85,18 +85,16 @@ public class EditPage extends InteractiveCustomUIPage<EditPage.PageData> {
             buildValueField(cBuilder, eBuilder, PageData.Selector.PosY, PageData.InputType.Float, String.valueOf(MathUtil.round(pos.y, 2)), true);
             buildValueField(cBuilder, eBuilder, PageData.Selector.PosZ, PageData.InputType.Float, String.valueOf(MathUtil.round(pos.z, 2)), true);
 
-            if (model != null) {
-                cBuilder.set("#Rot.Visible", true);
-                Vector3f rot = transform.getRotation();
-                buildValueField(cBuilder, eBuilder, PageData.Selector.RotPitch, PageData.InputType.Float, String.valueOf(MathUtil.round(rot.x, 2)));
-                buildValueField(cBuilder, eBuilder, PageData.Selector.RotYaw, PageData.InputType.Float, String.valueOf(MathUtil.round(rot.y, 2)));
-                buildValueField(cBuilder, eBuilder, PageData.Selector.RotRoll, PageData.InputType.Float, String.valueOf(MathUtil.round(rot.z, 2)));
-            }
+            cBuilder.set("#Rot.Visible", true);
+            Rotation3f rot = transform.getRotation();
+            buildValueField(cBuilder, eBuilder, PageData.Selector.RotPitch, PageData.InputType.Float, String.valueOf(MathUtil.round(rot.x, 2)));
+            buildValueField(cBuilder, eBuilder, PageData.Selector.RotYaw, PageData.InputType.Float, String.valueOf(MathUtil.round(rot.y, 2)));
+            buildValueField(cBuilder, eBuilder, PageData.Selector.RotRoll, PageData.InputType.Float, String.valueOf(MathUtil.round(rot.z, 2)));
         }
 
-        if (headRotation != null) {
+        if (headRotation != null && model != null) {
             originalHeadRotation = headRotation.clone();
-            Vector3f rot = headRotation.getRotation();
+            Rotation3f rot = headRotation.getRotation();
             cBuilder.set("#HeadRot.Visible", true);
             buildValueField(cBuilder, eBuilder, PageData.Selector.HeadRotPitch, PageData.InputType.Float, String.valueOf(MathUtil.round(rot.x, 2)));
             buildValueField(cBuilder, eBuilder, PageData.Selector.HeadRotYaw, PageData.InputType.Float, String.valueOf(MathUtil.round(rot.y, 2)));
@@ -186,31 +184,31 @@ public class EditPage extends InteractiveCustomUIPage<EditPage.PageData> {
         }
         switch (data.selector) {
             case PosX:
-                transform.getPosition().setX(Float.parseFloat(data.value));
+                transform.getPosition().x = Float.parseFloat(data.value);
                 break;
             case PosY:
-                transform.getPosition().setY(Float.parseFloat(data.value));
+                transform.getPosition().y = Float.parseFloat(data.value);
                 break;
             case PosZ:
-                transform.getPosition().setZ(Float.parseFloat(data.value));
+                transform.getPosition().z = Float.parseFloat(data.value);
                 break;
             case RotPitch:
-                transform.getRotation().setX(Float.parseFloat(data.value));
+                transform.getRotation().x = Float.parseFloat(data.value);
                 break;
             case RotYaw:
-                transform.getRotation().setY(Float.parseFloat(data.value));
+                transform.getRotation().y = Float.parseFloat(data.value);
                 break;
             case RotRoll:
-                transform.getRotation().setZ(Float.parseFloat(data.value));
+                transform.getRotation().z = Float.parseFloat(data.value);
                 break;
             case HeadRotPitch:
-                headRotation.getRotation().setX(Float.parseFloat(data.value));
+                headRotation.getRotation().x = Float.parseFloat(data.value);
                 break;
             case HeadRotYaw:
-                headRotation.getRotation().setY(Float.parseFloat(data.value));
+                headRotation.getRotation().y = Float.parseFloat(data.value);
                 break;
             case HeadRotRoll:
-                headRotation.getRotation().setZ(Float.parseFloat(data.value));
+                headRotation.getRotation().z = Float.parseFloat(data.value);
                 break;
             case Scale:
                 scale.setScale(Float.parseFloat(data.value));

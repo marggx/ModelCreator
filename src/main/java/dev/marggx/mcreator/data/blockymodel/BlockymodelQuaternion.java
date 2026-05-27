@@ -3,9 +3,9 @@ package dev.marggx.mcreator.data.blockymodel;
 import com.hypixel.hytale.codec.Codec;
 import com.hypixel.hytale.codec.KeyedCodec;
 import com.hypixel.hytale.codec.builder.BuilderCodec;
-import com.hypixel.hytale.math.vector.Vector3d;
-import com.hypixel.hytale.math.vector.Vector3f;
+import com.hypixel.hytale.math.vector.Rotation3f;
 import org.joml.Quaterniond;
+import org.joml.Vector3d;
 
 import javax.annotation.Nonnull;
 
@@ -37,23 +37,25 @@ public class BlockymodelQuaternion {
         this.w = w;
     }
 
-    public static BlockymodelQuaternion fromVector3f(Vector3f vector3f) {
-        return fromVector3d(vector3f.toVector3d());
+    public static BlockymodelQuaternion fromRotation3f(Rotation3f rot) {
+        Vector3d rotV3 = new Vector3d(rot.x(), rot.y(), rot.z());
+        rotV3.rotateY((float)Math.PI);
+
+        Quaterniond quat = new Quaterniond().rotationYXZ(rotV3.y(), rotV3.x(), rotV3.z());
+        return new BlockymodelQuaternion(quat.x(), quat.y(), quat.z(), quat.w());
     }
 
-    public static BlockymodelQuaternion fromVector3d(Vector3d vector3d) {
-        Vector3d vec = vector3d.clone();
-        vec.rotateY((float)Math.PI);
-        Quaterniond originalQuat = new Quaterniond().rotationYXZ(vec.getY(), vec.getX(), vec.getZ());
-        return new BlockymodelQuaternion(originalQuat.x(), originalQuat.y(), originalQuat.z(), originalQuat.w());
-    }
 
-    public static BlockymodelQuaternion getLocalQuat(Vector3f baseRotation, Vector3f toLocalRotation) {
-        Vector3f baseOrientation = baseRotation.clone().rotateY((float)Math.PI);
-        Vector3f toLocal = toLocalRotation.clone().rotateY((float)Math.PI);
-        Quaterniond originalQuat = new Quaterniond().rotationYXZ(baseOrientation.getY(), baseOrientation.getX(), baseOrientation.getZ());
+    public static BlockymodelQuaternion getLocalQuat(Rotation3f baseRotation, Rotation3f toLocalRotation) {
+        Vector3d baseOrientation = new Vector3d(baseRotation.x(), baseRotation.y(), baseRotation.z());
+        baseOrientation.rotateY((float)Math.PI);
+
+        Vector3d toLocal = new Vector3d(toLocalRotation.x(), toLocalRotation.y(), toLocalRotation.z());
+        toLocal.rotateY((float)Math.PI);
+
+        Quaterniond originalQuat = new Quaterniond().rotationYXZ(baseOrientation.y(), baseOrientation.x(), baseOrientation.z());
         originalQuat.invert();
-        Quaterniond toLocalQuat = new Quaterniond().rotationYXZ(toLocal.getY(), toLocal.getX(), toLocal.getZ());
+        Quaterniond toLocalQuat = new Quaterniond().rotationYXZ(toLocal.y(), toLocal.x(), toLocal.z());
         Quaterniond result = originalQuat.mul(toLocalQuat);
         return new BlockymodelQuaternion(result.x(), result.y(), result.z(), result.w());
     }

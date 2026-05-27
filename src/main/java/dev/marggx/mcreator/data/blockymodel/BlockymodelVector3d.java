@@ -6,7 +6,7 @@ import com.hypixel.hytale.codec.builder.BuilderCodec;
 import com.hypixel.hytale.codec.schema.metadata.ui.UIDisplayMode;
 import com.hypixel.hytale.codec.validation.Validators;
 import com.hypixel.hytale.math.util.MathUtil;
-import com.hypixel.hytale.math.vector.Vector3d;
+import org.joml.Vector3d;
 
 import javax.annotation.Nonnull;
 
@@ -38,7 +38,7 @@ public class BlockymodelVector3d extends Vector3d {
     }
 
     public static BlockymodelVector3d from(Vector3d v3d) {
-        return new BlockymodelVector3d(v3d.getX(), v3d.getY(), v3d.getZ());
+        return new BlockymodelVector3d(v3d.x(), v3d.y(), v3d.z());
     }
 
     public void round(int p) {

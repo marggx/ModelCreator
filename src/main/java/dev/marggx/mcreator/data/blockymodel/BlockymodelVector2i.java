@@ -5,7 +5,7 @@ import com.hypixel.hytale.codec.KeyedCodec;
 import com.hypixel.hytale.codec.builder.BuilderCodec;
 import com.hypixel.hytale.codec.schema.metadata.ui.UIDisplayMode;
 import com.hypixel.hytale.codec.validation.Validators;
-import com.hypixel.hytale.math.vector.Vector2i;
+import org.joml.Vector2i;
 
 import javax.annotation.Nonnull;
 

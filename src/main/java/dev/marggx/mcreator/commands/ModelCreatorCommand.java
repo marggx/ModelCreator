@@ -5,8 +5,6 @@ import com.hypixel.hytale.builtin.buildertools.PrototypePlayerBuilderToolSetting
 import com.hypixel.hytale.component.Holder;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
-import com.hypixel.hytale.protocol.GameMode;
-import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.command.system.basecommands.AbstractCommandCollection;
 import com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand;
@@ -22,7 +20,7 @@ public class ModelCreatorCommand extends AbstractCommandCollection {
     public ModelCreatorCommand() {
         super("mcreator", "mcreator.command.desc");
         this.addAliases("mc");
-        this.setPermissionGroup(GameMode.Creative);
+        this.setPermissionGroups("hytale:Builder");
         this.addSubCommand(new ModelCreatorCommand.MCreatorCreate());
         this.requirePermission("hytale.editor.prefab.manage");
     }
@@ -39,7 +37,7 @@ public class ModelCreatorCommand extends AbstractCommandCollection {
             Player playerComponent = store.getComponent(ref, Player.getComponentType());
             assert playerComponent != null;
 
-            if (!PrototypePlayerBuilderToolSettings.isOkayToDoCommandsOnSelection(ref, playerComponent, store)) {
+            if (!PrototypePlayerBuilderToolSettings.isOkayToDoCommandsOnSelection(ref, playerRef, store)) {
                 playerComponent.getPageManager().openCustomPage(ref, store, new SavePage(playerRef, null));
                 return;
             }
@@ -54,12 +52,12 @@ public class ModelCreatorCommand extends AbstractCommandCollection {
             BlockSelection selection = new BlockSelection();
             selection.setSelectionArea(builderStateSelection.getSelectionMin(), builderStateSelection.getSelectionMax());
 
-            int xMin = selection.getSelectionMin().getX();
-            int yMin = selection.getSelectionMin().getY();
-            int zMin = selection.getSelectionMin().getZ();
-            int width = selection.getSelectionMax().getX() - xMin;
-            int height = selection.getSelectionMax().getY() - yMin;
-            int depth = selection.getSelectionMax().getZ() - zMin;
+            int xMin = selection.getSelectionMin().x();
+            int yMin = selection.getSelectionMin().y();
+            int zMin = selection.getSelectionMin().z();
+            int width = selection.getSelectionMax().x() - xMin;
+            int height = selection.getSelectionMax().y() - yMin;
+            int depth = selection.getSelectionMax().z() - zMin;
             selection.setPosition(xMin + width/2, yMin, zMin + depth/2);
             BuilderToolsPlugin.forEachCopyableInSelection(world, xMin, yMin, zMin, width, height, depth, e -> {
                 Holder<EntityStore> holder = store.copyEntity(e);
