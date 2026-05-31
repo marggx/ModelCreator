@@ -4,21 +4,19 @@ plugins {
 }
 
 import org.gradle.internal.os.OperatingSystem
-patchline="release"
+
+patchline = "release"
 
 ext {
     if (project.hasProperty('hytale_home')) {
         hytaleHome = project.findProperty('hytale_home')
-    }
-    else {
+    } else {
         def os = OperatingSystem.current()
         if (os.isWindows()) {
             hytaleHome = "${System.getProperty("user.home")}/AppData/Roaming/Hytale"
-        }
-        else if (os.isMacOsX()) {
+        } else if (os.isMacOsX()) {
             hytaleHome = "${System.getProperty("user.home")}/Library/Application Support/Hytale"
-        }
-        else if (os.isLinux()) {
+        } else if (os.isLinux()) {
             hytaleHome = "${System.getProperty("user.home")}/.var/app/com.hypixel.HytaleLauncher/data/Hytale"
             if (!file(hytaleHome).exists()) {
                 hytaleHome = "${System.getProperty("user.home")}/.local/share/Hytale"
@@ -27,11 +25,9 @@ ext {
     }
     if (project.hasProperty('jar_dir')) {
         jarDir = project.findProperty('jar_dir')
-    }
-    else if (System.getenv('HYTALE_JAR_DIR') != null) {
+    } else if (System.getenv('HYTALE_JAR_DIR') != null) {
         jarDir = System.getenv('HYTALE_JAR_DIR')
-    }
-    else {
+    } else {
         jarDir = "${hytaleHome}/install/${patchline}/package/game/latest/Server"
     }
 }
@@ -39,8 +35,7 @@ ext {
 
 if (!project.hasProperty('hytaleHome')) {
     throw new GradleException('Your Hytale install could not be detected automatically. If you are on an unsupported platform or using a custom install location, please define the install location using the hytale_home property.');
-}
-else if (!file(project.findProperty('jarDir')).exists()) {
+} else if (!file(project.findProperty('jarDir')).exists()) {
     throw new GradleException("Failed to find Hytale at the expected location. Please make sure you have installed the game. The expected location can be changed using the hytale_home property. Currently looking in ${project.findProperty('hytaleHome')}")
 }
 
@@ -87,11 +82,11 @@ tasks.register('updatePluginManifest') {
 
 tasks.register('fetchLatestServerVersion') {
     def metadataUrl = "https://maven.hytale.com/$patchline/com/hypixel/hytale/Server/maven-metadata.xml"
-    def propsFile   = file('gradle.properties')
+    def propsFile = file('gradle.properties')
     def manifestFile = file('src/main/resources/manifest.json')
     doLast {
-        def metadata      = new URI(metadataUrl).toURL().text
-        def matcher       = (metadata =~ /<latest>([^<]*)<\/latest>/)
+        def metadata = new URI(metadataUrl).toURL().text
+        def matcher = (metadata =~ /<latest>([^<]*)<\/latest>/)
         if (!matcher.find()) {
             throw new GradleException("Could not parse latest version from Hytale Maven metadata at ${metadataUrl}")
         }
@@ -136,7 +131,7 @@ idea.project.settings.runConfigurations {
         programParameters = createServerRunArguments(sourceSets.main.java.srcDirs.first().parentFile.absolutePath)
         workingDirectory = serverRunDir.absolutePath
         envs = [
-            "HYTALE_JAR_DIR": jarDir
+                "HYTALE_JAR_DIR": jarDir
         ]
     }
 }

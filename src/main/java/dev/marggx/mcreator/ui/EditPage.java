@@ -123,6 +123,7 @@ public class EditPage extends InteractiveCustomUIPage<EditPage.PageData> {
     private void buildValueField(UICommandBuilder cBuilder, @NonNullDecl UIEventBuilder eBuilder, PageData.Selector selector, PageData.InputType type, String value) {
         buildValueField(cBuilder, eBuilder, selector, type, value, false);
     }
+
     private void buildValueField(UICommandBuilder cBuilder, @NonNullDecl UIEventBuilder eBuilder, PageData.Selector selector, PageData.InputType type, String value, boolean useFocusLost) {
         cBuilder.set(selector.getValue(), value);
         eBuilder.addEventBinding(
@@ -137,7 +138,6 @@ public class EditPage extends InteractiveCustomUIPage<EditPage.PageData> {
     private String removeValueFromString(String selector) {
         return selector.endsWith(".Value") ? selector.substring(0, selector.length() - ".Value".length()) : selector;
     }
-
 
     public void handleDataEvent(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, @Nonnull EditPage.PageData data) {
         Player playerComponent = store.getComponent(ref, Player.getComponentType());
@@ -238,7 +238,7 @@ public class EditPage extends InteractiveCustomUIPage<EditPage.PageData> {
     @NonNullDecl
     private static StringBuilder floatStringBuilder(String raw) {
         StringBuilder sb = new StringBuilder(raw.length());
-        boolean hasDot  = false;
+        boolean hasDot = false;
         boolean hasMinus = false;
 
         for (int i = 0; i < raw.length(); i++) {
@@ -271,7 +271,8 @@ public class EditPage extends InteractiveCustomUIPage<EditPage.PageData> {
         public enum InputType {
             Float;
 
-            InputType() {}
+            InputType() {
+            }
         }
 
         public enum Selector {
@@ -287,12 +288,15 @@ public class EditPage extends InteractiveCustomUIPage<EditPage.PageData> {
             Scale("#Scale #Input.Value");
 
             private final String value;
+
             Selector(final String value) {
                 this.value = value;
             }
+
             public String getValue() {
                 return value;
             }
+
             public static Selector fromValue(String value) {
                 return switch (value) {
                     case "#Pos #X #Input.Value" -> PosX;

@@ -21,7 +21,8 @@ public class BlockymodelShapeTextureLayout {
     public BlockymodelShapeTextureLayoutVector2b mirror;
     public int angle;
 
-    public BlockymodelShapeTextureLayout() {}
+    public BlockymodelShapeTextureLayout() {
+    }
 
     public BlockymodelShapeTextureLayout(BlockymodelVector2i offset, BlockymodelShapeTextureLayoutVector2b mirror, int angle) {
         this.offset = offset;

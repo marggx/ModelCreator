@@ -15,7 +15,7 @@ public class OnDemandCodec<T> implements Codec<T>, WrappedCodec<T> {
     private final Supplier<Codec<T>> getter;
 
     public OnDemandCodec(Supplier<Codec<T>> getter) {
-         this.getter = getter;
+        this.getter = getter;
     }
 
     @NullableDecl

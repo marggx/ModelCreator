@@ -29,9 +29,9 @@ import java.nio.file.Path;
 import java.util.List;
 
 public class BlockymodelService {
-
     private static final BlockymodelService INSTANCE = new BlockymodelService();
     private static final Logger LOGGER = Logger.get();
+
     public static BlockymodelService get() {
         return INSTANCE;
     }
@@ -295,7 +295,7 @@ public class BlockymodelService {
         int counter = 0;
         Blockymodel[] nodes = blockyNode.children;
 
-        if (nodes == null || nodes.length == 0) return counter;
+        if (nodes == null) return counter;
 
         for (Blockymodel node : nodes) {
             counter += countNodes(node);
@@ -309,7 +309,7 @@ public class BlockymodelService {
         if (attachments == null) return;
 
         for (ModelAttachment attachment : attachments) {
-            BlockymodelBase blockymodelBase = BlockymodelService.get().loadBlockymodelBase(attachment.getModel());
+            BlockymodelBase blockymodelBase = this.loadBlockymodelBase(attachment.getModel());
             if (blockymodelBase == null) continue;
 
             Blockymodel[] nodes = blockymodelBase.getNodes();

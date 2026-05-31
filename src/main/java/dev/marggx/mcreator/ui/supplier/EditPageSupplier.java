@@ -12,7 +12,7 @@ import dev.marggx.mcreator.ui.EditPage;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class EditPageSupplier  implements OpenCustomUIInteraction.CustomPageSupplier {
+public class EditPageSupplier implements OpenCustomUIInteraction.CustomPageSupplier {
 
     @Nullable
     public CustomUIPage tryCreate(@Nonnull Ref<EntityStore> ref, @Nonnull ComponentAccessor<EntityStore> componentAccessor, @Nonnull PlayerRef playerRef, @Nonnull InteractionContext context) {

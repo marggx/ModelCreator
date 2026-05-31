@@ -39,7 +39,7 @@ public class BlockymodelQuaternion {
 
     public static BlockymodelQuaternion fromRotation3f(Rotation3f rot) {
         Vector3d rotV3 = new Vector3d(rot.x(), rot.y(), rot.z());
-        rotV3.rotateY((float)Math.PI);
+        rotV3.rotateY((float) Math.PI);
 
         Quaterniond quat = new Quaterniond().rotationYXZ(rotV3.y(), rotV3.x(), rotV3.z());
         return new BlockymodelQuaternion(quat.x(), quat.y(), quat.z(), quat.w());
@@ -48,10 +48,10 @@ public class BlockymodelQuaternion {
 
     public static BlockymodelQuaternion getLocalQuat(Rotation3f baseRotation, Rotation3f toLocalRotation) {
         Vector3d baseOrientation = new Vector3d(baseRotation.x(), baseRotation.y(), baseRotation.z());
-        baseOrientation.rotateY((float)Math.PI);
+        baseOrientation.rotateY((float) Math.PI);
 
         Vector3d toLocal = new Vector3d(toLocalRotation.x(), toLocalRotation.y(), toLocalRotation.z());
-        toLocal.rotateY((float)Math.PI);
+        toLocal.rotateY((float) Math.PI);
 
         Quaterniond originalQuat = new Quaterniond().rotationYXZ(baseOrientation.y(), baseOrientation.x(), baseOrientation.z());
         originalQuat.invert();

@@ -28,6 +28,7 @@ public class HytaleService {
     private static final HytaleService INSTANCE = new HytaleService();
     private static final Logger LOGGER = Logger.get();
     private final AssetPrefabFileProvider assetProvider = new AssetPrefabFileProvider();
+
     public static HytaleService get() {
         return INSTANCE;
     }

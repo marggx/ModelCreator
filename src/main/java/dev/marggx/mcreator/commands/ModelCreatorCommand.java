@@ -32,8 +32,7 @@ public class ModelCreatorCommand extends AbstractCommandCollection {
         }
 
         @Override
-        protected void execute(@NonNullDecl CommandContext commandContext, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world)
-        {
+        protected void execute(@NonNullDecl CommandContext commandContext, @NonNullDecl Store<EntityStore> store, @NonNullDecl Ref<EntityStore> ref, @NonNullDecl PlayerRef playerRef, @NonNullDecl World world) {
             Player playerComponent = store.getComponent(ref, Player.getComponentType());
             assert playerComponent != null;
 

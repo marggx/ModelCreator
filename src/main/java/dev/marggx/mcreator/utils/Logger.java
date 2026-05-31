@@ -5,11 +5,13 @@ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 public class Logger {
     private static final Logger INSTANCE = new Logger();
+
     public static Logger get() {
         return INSTANCE;
     }
 
     private final HytaleLogger parent = HytaleLogger.get("ModelCreator");
+
     public Logger() {
     }
 

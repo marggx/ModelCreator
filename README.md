@@ -1,9 +1,11 @@
 # Model Creator
+
 ![Cover](img/cover.png)
 
 A Plugin that allows you to create **Blockymodels directly from in-game entities**.
 
-Instead of building models manually in Blockbench, you can select entities in the world and export them as **one Blockymodel with a single combined texture**.
+Instead of building models manually in Blockbench, you can select entities in the world and export them as **one
+Blockymodel with a single combined texture**.
 
 ---
 
@@ -21,6 +23,7 @@ Instead of building models manually in Blockbench, you can select entities in th
 # Known Issues (Beta)
 
 ### This plugin is currently _in Beta_.
+
 ### If you encounter any issues, please write a comment or hit me up on any [Social Media](#socials).
 
 ### Mob Models
@@ -33,6 +36,7 @@ Mob models export, but attachments are not implemented yet
 # Planned Features
 
 Currently working on:
+
 * More precise entity controls via UI
 * Entity grouping (Move or rotate multiple entities together)
 * Additional utility features

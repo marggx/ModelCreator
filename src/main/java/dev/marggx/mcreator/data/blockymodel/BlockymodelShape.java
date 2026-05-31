@@ -22,7 +22,9 @@ public class BlockymodelShape {
                     i -> i.textureLayout
             )
             .add()
-            .append(new KeyedCodec<>("type", Codec.STRING, true, true), (i, v) -> i.type = BlockymodelShapeType.fromValue(v), (i) -> {return i.type == null ? null : i.type.getValue();})
+            .append(new KeyedCodec<>("type", Codec.STRING, true, true), (i, v) -> i.type = BlockymodelShapeType.fromValue(v), (i) -> {
+                return i.type == null ? null : i.type.getValue();
+            })
             .add()
             .append(new KeyedCodec<>("settings", BlockymodelShapeSettings.CODEC, true, true), (i, v) -> i.settings = v, i -> i.settings)
             .add()
@@ -32,7 +34,9 @@ public class BlockymodelShape {
             .add()
             .append(new KeyedCodec<>("doubleSided", Codec.BOOLEAN, true, true), (i, v) -> i.doubleSided = false, i -> i.doubleSided)
             .add()
-            .append(new KeyedCodec<>("shadingMode", Codec.STRING, true, true), (i, v) -> i.shadingMode = BlockymodelShapeShadingMode.fromValue(v), (i) -> {return i.shadingMode == null ? null : i.shadingMode.getValue();})
+            .append(new KeyedCodec<>("shadingMode", Codec.STRING, true, true), (i, v) -> i.shadingMode = BlockymodelShapeShadingMode.fromValue(v), (i) -> {
+                return i.shadingMode == null ? null : i.shadingMode.getValue();
+            })
             .add()
             .build();
 

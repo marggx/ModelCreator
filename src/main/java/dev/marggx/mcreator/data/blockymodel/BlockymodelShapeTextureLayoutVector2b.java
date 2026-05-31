@@ -18,7 +18,8 @@ public class BlockymodelShapeTextureLayoutVector2b {
     public boolean x;
     public boolean y;
 
-    public BlockymodelShapeTextureLayoutVector2b() {}
+    public BlockymodelShapeTextureLayoutVector2b() {
+    }
 
     public BlockymodelShapeTextureLayoutVector2b(boolean x, boolean y) {
         this.x = x;
