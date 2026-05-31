@@ -4,6 +4,7 @@ import com.hypixel.hytale.component.Holder;
 import com.hypixel.hytale.math.util.MathUtil;
 import com.hypixel.hytale.math.vector.Rotation3f;
 import com.hypixel.hytale.server.core.HytaleServer;
+import com.hypixel.hytale.server.core.asset.type.item.config.Item;
 import com.hypixel.hytale.server.core.modules.entity.component.EntityScaleComponent;
 import com.hypixel.hytale.server.core.modules.entity.component.HeadRotation;
 import com.hypixel.hytale.server.core.modules.entity.component.ModelComponent;
@@ -23,10 +24,12 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 public class MapperService {
     private static final MapperService INSTANCE = new MapperService();
     private static final Logger LOGGER = Logger.get();
+
     public static MapperService get() {
         return INSTANCE;
     }
@@ -40,29 +43,32 @@ public class MapperService {
         List<Model> blockymodels = getBlockymodelsAndEntitiesFromBlockSelection(prefab);
         if (blockymodels == null) return false;
 
-        return createBlockymodelFromBlockSelection(blockymodels, prefab, pack, name, createNewItem);
+        Vector3d position = new Vector3d(prefab.getX(), prefab.getY(), prefab.getZ());
+        return createBlockymodel(blockymodels, position, pack, name, createNewItem, null);
     }
 
     public boolean createBlockymodelFromBlockSelection(BlockSelection selection, String pack, String name, boolean createNewItem) {
         List<Model> blockymodels = getBlockymodelsAndEntitiesFromBlockSelection(selection);
         if (blockymodels == null) return false;
 
-        return createBlockymodelFromBlockSelection(blockymodels, selection, pack, name, createNewItem);
+        Vector3d position = new Vector3d(selection.getX(), selection.getY(), selection.getZ());
+        return createBlockymodel(blockymodels, position, pack, name, createNewItem, null);
     }
 
-    public boolean createBlockymodelFromBlockSelection(List<Model> blockymodels, BlockSelection selection, String pack, String name, boolean createNewItem) {
-        BaseModel base = new BaseModel(600, selection, null, null, null, null);
+    public boolean createBlockymodel(List<Model> blockymodels, Vector3d position, String pack, String name, boolean createNewItem, Consumer<Item> onLoaded) {
+        BaseModel base = new BaseModel(600, position, null, null, null, null);
         BaseModel model = createBlockymodel(blockymodels, base);
 
         model.setName(name);
         model.setPack(pack);
         boolean created = createNewModel(model);
+        textureService.clearCache();
         if (!created) return false;
 
         if (!createNewItem) return true;
         HytaleServer.SCHEDULED_EXECUTOR.schedule(() -> {
             try {
-                hytaleService.createNewItem(base);
+                hytaleService.createNewItem(base, onLoaded);
             } catch (IOException e) {
                 LOGGER.severe("Failed to create new item for blockymodel: " + model.name(), e);
             }
@@ -148,12 +154,12 @@ public class MapperService {
         if (entities.isEmpty()) {
             LOGGER.warning("No entities found in prefab. Cannot create List<Model>.");
             return null;
-        };
+        }
         return getModelsFromEntities(entities);
     }
 
     public List<Model> getBlockymodelsAndEntitiesFromBlockSelection(BlockSelection selection) {
-        List<Holder<EntityStore>> entities = hytaleService.getEntitiesFromBlockSelection(selection);
+        List<Holder<EntityStore>> entities = hytaleService.getHoldersFromBlockSelectionForModel(selection);
         if (entities.isEmpty()) {
             LOGGER.warning("No entities found in selection. Cannot create List<Model>.");
             return null;
@@ -167,7 +173,7 @@ public class MapperService {
             Model model = blockymodelService.loadModelFromHolder(entity);
 
             if (model == null || !model.validate()) {
-                LOGGER.severe("Something went wrong when loading a model from an entity.", model);
+                LOGGER.severe("Something went wrong when loading a model from an entity. " + model);
                 continue;
             }
 
@@ -200,6 +206,8 @@ public class MapperService {
     }
 
     private void handlePosition(BaseModel base, BlockymodelVector3d position, BlockymodelVector3d offset, boolean hasTransformRotation) {
+        position.sub(base.position());
+
         position.x = -position.x();
         position.z = -position.z();
 
@@ -211,16 +219,7 @@ public class MapperService {
             position.y = position.y() - 16.0;
         }
 
-        double addX = 32.0;
-        double addZ = 32.0;
-        if (base.selection() != null) {
-            int subX = base.selection().getSelectionMax().x() - base.selection().getSelectionMin().x();
-            addX *= (subX != 0 ? 1 + subX : 0.5);
-            int subZ = base.selection().getSelectionMax().z() - base.selection().getSelectionMin().z();
-            addZ *= (subZ != 0 ? 1 + subZ : 0.5);
-        }
-
-        position.add(addX, 16.0, addZ);
+        position.add(0.0, 16.0, 0.0);
         position.round(4);
     }
 

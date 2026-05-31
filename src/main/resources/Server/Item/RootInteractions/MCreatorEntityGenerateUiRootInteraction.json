@@ -4,6 +4,6 @@
     "ClickBypass": true
   },
   "Interactions": [
-    "MCreatorCommand"
+    "MCreatorGenerateUi"
   ]
 }

@@ -43,9 +43,4 @@ public class Blockymodel {
         this.shape = shape;
         this.children = children;
     }
-
-    public void addChild(Blockymodel child) {
-        children = java.util.Arrays.copyOf(children, children.length + 1);
-        children[children.length - 1] = child;
-    }
 }

@@ -2,6 +2,7 @@ package dev.marggx.mcreator.ui;
 
 import com.hypixel.hytale.assetstore.AssetPack;
 import com.hypixel.hytale.builtin.buildertools.BuilderToolsPlugin;
+import com.hypixel.hytale.builtin.buildertools.prefabeditor.PrefabEditSessionManager;
 import com.hypixel.hytale.builtin.buildertools.prefabeditor.enums.PrefabRootDirectory;
 import com.hypixel.hytale.builtin.buildertools.prefablist.AssetPrefabFileProvider;
 import com.hypixel.hytale.codec.Codec;
@@ -12,18 +13,22 @@ import com.hypixel.hytale.common.util.PathUtil;
 import com.hypixel.hytale.component.Holder;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
-import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
-import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
-import com.hypixel.hytale.protocol.packets.interface_.NotificationStyle;
-import com.hypixel.hytale.protocol.packets.interface_.Page;
+import com.hypixel.hytale.math.util.ChunkUtil;
+import com.hypixel.hytale.math.util.MathUtil;
+import com.hypixel.hytale.protocol.Color;
+import com.hypixel.hytale.protocol.packets.buildertools.BuilderToolPrefabPreview;
+import com.hypixel.hytale.protocol.packets.interface_.*;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.asset.AssetModule;
+import com.hypixel.hytale.server.core.asset.type.environment.config.Environment;
+import com.hypixel.hytale.server.core.asset.util.ColorParseUtil;
 import com.hypixel.hytale.server.core.entity.UUIDComponent;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.entity.entities.player.pages.InteractiveCustomUIPage;
 import com.hypixel.hytale.server.core.inventory.InventoryComponent;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.modules.singleplayer.SingleplayerModule;
+import com.hypixel.hytale.server.core.prefab.PrefabLoadException;
 import com.hypixel.hytale.server.core.prefab.PrefabStore;
 import com.hypixel.hytale.server.core.prefab.selection.standard.BlockSelection;
 import com.hypixel.hytale.server.core.ui.DropdownEntryInfo;
@@ -34,14 +39,21 @@ import com.hypixel.hytale.server.core.ui.builder.EventData;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
+import com.hypixel.hytale.server.core.universe.world.World;
+import com.hypixel.hytale.server.core.universe.world.chunk.BlockChunk;
+import com.hypixel.hytale.server.core.universe.world.chunk.WorldChunk;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.core.util.NotificationUtil;
 import dev.marggx.mcreator.data.extras.Model;
+import dev.marggx.mcreator.services.GroupService;
 import dev.marggx.mcreator.services.HytaleService;
 import dev.marggx.mcreator.services.MapperService;
+import dev.marggx.mcreator.snapshots.BlockyReplacementSnapshot;
+import dev.marggx.mcreator.snapshots.MCreatorActions;
 import dev.marggx.mcreator.utils.Logger;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
+import org.joml.Vector3d;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -75,6 +87,10 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
     @Nonnull
     private Path assetsCurrentDir = Paths.get("");
     private boolean isPrefab = false;
+    private static final int DEFAULT_BIOME_TINT = ColorParseUtil.colorToARGBInt(PrefabEditSessionManager.DEFAULT_TINT) & 16777215;
+    private static final int DEFAULT_WATER_TINT = ColorParseUtil.colorToARGBInt(Environment.getUnknownFor("").getWaterTint()) & 16777215;
+    @Nullable
+    private Path previewedBrowserPath;
 
     public SavePage(@Nonnull PlayerRef playerRef, BlockSelection selection) {
         super(playerRef, CustomPageLifetime.CanDismissOrCloseThroughInteraction, SavePage.PageData.CODEC);
@@ -138,6 +154,7 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
                         .append(PageData.PACK, "#SelectionView #Pack #PackDropdown.Value")
                         .append(PageData.NAME, "#SelectionView #Name #NameInput.Value")
                         .append(PageData.CREATE_ITEM, "#SelectionView #CreateItem #CheckBox.Value")
+                        .append(PageData.AUTO_REPLACE, "#SelectionView #AutoReplace #CheckBox.Value")
         );
         uiEventBuilder.addEventBinding(CustomUIEventBindingType.Activating, "#PrefabView #CancelButton", new EventData().append(PageData.ACTION, PageData.Action.Cancel.name()));
         uiEventBuilder.addEventBinding(
@@ -318,22 +335,38 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
                     break;
                 }
 
-                this.sendUpdate(uiBuilder);
-                BuilderToolsPlugin.addToQueue(
-                playerComponent,
-                playerRefComponent,
-                (r, builderState, componentAccessor) -> {
-                    boolean created = mapperService.createBlockymodelFromBlockSelection(models, selection, data.pack, data.name, data.createItem);
-                    if (created) {
-                        NotificationUtil.sendNotificationToUniverse(Message.translation("mcreator.ui.save.success").param("pack", data.pack), NotificationStyle.Success);
-                        InventoryComponent.Hotbar inventory = componentAccessor.getComponent(r, InventoryComponent.Hotbar.getComponentType());
-                        assert inventory != null;
-                        inventory.getInventory().addItemStack(new ItemStack(HytaleService.get().createValidItemName(data.name)));
-                    } else {
-                        NotificationUtil.sendNotificationToUniverse(Message.translation("mcreator.ui.save.error").param("pack", data.pack), NotificationStyle.Danger);
-                    }
-                    playerComponent.getPageManager().setPage(ref, store, Page.None);
-                });
+                playerComponent.getPageManager().setPage(ref, store, Page.None);
+
+                BlockyReplacementSnapshot snapshot = new BlockyReplacementSnapshot(null, null);
+                if (data.autoReplace) {
+                    snapshot.holders = HytaleService.get().removeEntitiesInSelection(selection, store);
+                    BuilderToolsPlugin.getState(playerComponent, playerRef).pushHistory(MCreatorActions.BLOCKY_REPLACEMENT_SNAPSHOT, snapshot);
+                }
+                List<GroupService.ModelGroup> modelGroups = GroupService.get().createGroupsByPosAndNodeCount(models);
+                int counter = 0;
+                for (GroupService.ModelGroup modelGroup : modelGroups) {
+                    String name = data.name + "_" + counter;
+                    counter++;
+                    BuilderToolsPlugin.addToQueue(
+                            playerComponent,
+                            playerRefComponent,
+                            (r, builderState, componentAccessor) -> {
+                                boolean created = mapperService.createBlockymodel(modelGroup.entities, modelGroup.center, data.pack, name, data.createItem, (item) -> {
+                                    playerRefComponent.getReference().getStore().getExternalData().getWorld().execute(() -> {
+                                        Vector3d pos = new Vector3d(selection.getX(), selection.getSelectionMin().y(), selection.getZ());
+                                        pos.add(modelGroup.center);
+                                        if (data.autoReplace) {
+                                            Ref<EntityStore> newRef = HytaleService.get().placeNewItem(pos, HytaleService.get().createValidItemName(name), playerRefComponent.getReference().getStore());
+                                            snapshot.refs.put(name, newRef);
+                                        }
+                                        InventoryComponent.Hotbar inventory = componentAccessor.getComponent(r, InventoryComponent.Hotbar.getComponentType());
+                                        assert inventory != null;
+                                        inventory.getInventory().addItemStack(new ItemStack(HytaleService.get().createValidItemName(name)));
+                                        NotificationUtil.sendNotificationToUniverse(Message.translation("mcreator.ui.save.success").param("pack", data.pack), NotificationStyle.Success);
+                                    });
+                                });
+                            });
+                }
                 break;
             }
 
@@ -477,6 +510,7 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
                     this.sendUpdate(commandBuilder, eventBuilder, false);
                 } else {
                     this.selectedPath = targetVirtualPath;
+                    this.sendBrowserPreview(this.assetProvider.resolveVirtualPath(targetVirtualPath));
                     UICommandBuilder commandBuilder = new UICommandBuilder();
                     commandBuilder.set("#BrowserPage #CurrentPath.Text", "Assets/" + targetVirtualPath);
                     this.sendUpdate(commandBuilder);
@@ -500,9 +534,83 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
                 this.sendUpdate(commandBuilder, eventBuilder, false);
             } else {
                 this.selectedPath = PathUtil.relativize(this.browserRoot, file).toString().replace('\\', '/');
+                this.sendBrowserPreview(file);
                 UICommandBuilder commandBuilder = new UICommandBuilder();
                 commandBuilder.set("#BrowserPage #CurrentPath.Text", this.selectedPath);
                 this.sendUpdate(commandBuilder);
+            }
+        }
+    }
+
+    private void sendBrowserPreview(@Nullable Path file) {
+        if (file == null || !Files.isRegularFile(file)) {
+            this.clearBrowserPreview();
+        } else if (!file.equals(this.previewedBrowserPath)) {
+            this.previewedBrowserPath = file;
+
+            try {
+                BlockSelection selection = PrefabStore.get().getPrefab(file);
+                this.sendBrowserPreviewPacket(selection);
+            } catch (PrefabLoadException var3) {
+                this.sendBrowserPreviewPacket(null);
+            }
+        }
+    }
+
+    private void clearBrowserPreview() {
+        if (this.previewedBrowserPath != null) {
+            this.previewedBrowserPath = null;
+            this.sendBrowserPreviewPacket(null);
+        }
+    }
+
+    private void sendBrowserPreviewPacket(@Nullable BlockSelection selection) {
+        BuilderToolPrefabPreview packet = new BuilderToolPrefabPreview();
+        if (selection != null) {
+            packet.tilt = 23;
+            packet.spinSpeed = 27;
+            packet.previewScale = 100;
+            EditorBlocksChange editorPacket = selection.toPacket();
+            packet.blocksChange = editorPacket.blocksChange;
+            packet.fluidsChange = editorPacket.fluidsChange;
+            packet.entityChanges = editorPacket.entityChanges;
+            this.applyTintFromPlayerPosition(packet);
+        }
+
+        this.playerRef.getPacketHandler().write(packet);
+    }
+
+    private void applyTintFromPlayerPosition(@Nonnull BuilderToolPrefabPreview packet) {
+        Ref<EntityStore> ref = this.playerRef.getReference();
+        if (ref == null) {
+            packet.biomeTint = DEFAULT_BIOME_TINT;
+            packet.waterTint = DEFAULT_WATER_TINT;
+        } else {
+            Store<EntityStore> store = ref.getStore();
+            World world = store.getExternalData().getWorld();
+            Vector3d pos = this.playerRef.getTransform().getPosition();
+            int x = MathUtil.floor(pos.x);
+            int y = MathUtil.floor(pos.y);
+            int z = MathUtil.floor(pos.z);
+            long chunkIndex = ChunkUtil.indexChunkFromBlock(x, z);
+            WorldChunk chunk = world.getNonTickingChunk(chunkIndex);
+            if (chunk != null && chunk.getBlockChunk() != null) {
+                BlockChunk blockChunk = chunk.getBlockChunk();
+                packet.biomeTint = blockChunk.getTint(x, z);
+                int envId = blockChunk.getEnvironment(x, y, z);
+                Environment environment = Environment.getAssetMap().getAsset(envId);
+                if (environment != null) {
+                    Color waterColor = environment.getWaterTint();
+                    if (waterColor != null) {
+                        packet.waterTint = (waterColor.red & 255) << 16 | (waterColor.green & 255) << 8 | waterColor.blue & 255;
+                        return;
+                    }
+                }
+
+                packet.waterTint = DEFAULT_WATER_TINT;
+            } else {
+                packet.biomeTint = DEFAULT_BIOME_TINT;
+                packet.waterTint = DEFAULT_WATER_TINT;
             }
         }
     }
@@ -741,6 +849,8 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
         public static final String UUID = "UUID";
         public static final String CHECKED = "@Checked";
         public static final String CREATE_ITEM = "@CreateItem";
+        public static final String AUTO_GROUP = "@AutoGroup";
+        public static final String AUTO_REPLACE = "@AutoReplace";
         public static final String BROWSER_FILE = "File";
         public static final String BROWSER_ROOT = "@BrowserRoot";
         public static final String BROWSER_SEARCH = "@BrowserSearch";
@@ -763,6 +873,10 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
                 .add()
                 .append(new KeyedCodec<>(CREATE_ITEM, Codec.BOOLEAN), (o, createItem) -> o.createItem = createItem, o -> o.createItem)
                 .add()
+                .append(new KeyedCodec<>(AUTO_GROUP, Codec.BOOLEAN), (o, autoGroup) -> o.autoGroup = autoGroup, o -> o.autoGroup)
+                .add()
+                .append(new KeyedCodec<>(AUTO_REPLACE, Codec.BOOLEAN), (o, autoReplace) -> o.autoReplace = autoReplace, o -> o.autoReplace)
+                .add()
                 .append(new KeyedCodec<>(BROWSER_FILE, Codec.STRING), (o, browserFile) -> o.browserFile = browserFile, o -> o.browserFile)
                 .add()
                 .append(new KeyedCodec<>(BROWSER_ROOT, Codec.STRING), (o, browserRootStr) -> o.browserRootStr = browserRootStr, o -> o.browserRootStr)
@@ -777,6 +891,8 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
         public String pack;
         public boolean checked;
         public boolean createItem;
+        public boolean autoGroup;
+        public boolean autoReplace;
         public String browserFile;
         public String browserRootStr;
         public String browserSearchStr;

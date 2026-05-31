@@ -5,6 +5,8 @@ import com.hypixel.hytale.server.core.asset.type.model.config.ModelAttachment;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import dev.marggx.mcreator.data.blockymodel.BlockymodelBase;
 
+import javax.annotation.Nonnull;
+
 public class Model {
     private String id;
     private BlockymodelBase blockymodel;
@@ -91,5 +93,18 @@ public class Model {
         ITEM,
         BLOCK,
         MODEL
+    }
+
+    @Nonnull
+    @Override
+    public String toString() {
+        return "Model{id="
+                + id
+                + ", path="
+                + path
+                + ", texturePath="
+                + texturePath
+                + ", type="
+                + type;
     }
 }

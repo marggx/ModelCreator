@@ -7,27 +7,28 @@ import com.hypixel.hytale.component.CommandBuffer;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.protocol.InteractionType;
+import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.InteractionContext;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.modules.interaction.interaction.CooldownHandler;
 import com.hypixel.hytale.server.core.modules.interaction.interaction.config.SimpleInstantInteraction;
 import com.hypixel.hytale.server.core.prefab.selection.standard.BlockSelection;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
+import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import dev.marggx.mcreator.services.HytaleService;
-import dev.marggx.mcreator.ui.SavePage;
-import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
+import dev.marggx.mcreator.services.GroupService;
 
 import javax.annotation.Nonnull;
 
-public class GenerateInteraction extends SimpleInstantInteraction {
+public class GroupCreate extends SimpleInstantInteraction {
+
     @Nonnull
-    public static final BuilderCodec<GenerateInteraction> CODEC = BuilderCodec.builder(
-            GenerateInteraction.class, GenerateInteraction::new, SimpleInstantInteraction.CODEC
+    public static final BuilderCodec<GroupCreate> CODEC = BuilderCodec.builder(
+            GroupCreate.class, GroupCreate::new, SimpleInstantInteraction.CODEC
     ).build();
 
     @Override
-    protected void firstRun(@NonNullDecl InteractionType type, @NonNullDecl InteractionContext context, @NonNullDecl CooldownHandler cooldownHandler) {
+    protected void firstRun(@Nonnull InteractionType type, @Nonnull InteractionContext context, @Nonnull CooldownHandler cooldownHandler) {
         Ref<EntityStore> ref = context.getEntity();
         CommandBuffer<EntityStore> commandBuffer = context.getCommandBuffer();
         assert commandBuffer != null;
@@ -38,19 +39,18 @@ public class GenerateInteraction extends SimpleInstantInteraction {
         Store<EntityStore> store = commandBuffer.getStore();
 
         if (!PrototypePlayerBuilderToolSettings.isOkayToDoCommandsOnSelection(ref, playerRef, commandBuffer)) {
-            playerComponent.getPageManager().openCustomPage(ref, store, new SavePage(playerRef, null));
             return;
         }
 
         BuilderToolsPlugin.BuilderState builderState = BuilderToolsPlugin.getState(playerComponent, playerRef);
         BlockSelection builderStateSelection = builderState.getSelection();
         if (builderStateSelection == null) {
-            playerComponent.getPageManager().openCustomPage(ref, store, new SavePage(playerRef, null));
             return;
         }
 
-        BlockSelection selection = HytaleService.get().cloneBlockSelectionWithEntitiesInSelection(builderStateSelection, store);
-
-        playerComponent.getPageManager().openCustomPage(ref, store, new SavePage(playerRef, selection));
+        commandBuffer.run(_store -> {
+            GroupService.get().autoCreateGroupsBySelection(builderStateSelection, _store);
+            Universe.get().sendMessage(Message.raw("Grouping done!"));
+        });
     }
 }

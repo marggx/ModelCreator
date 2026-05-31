@@ -8,7 +8,7 @@ $Browser = "PrefabBrowser.ui";
   Style: (...$C.@DefaultLabelStyle, VerticalAlignment: Center);
 };
 
-@ContainerWidth = 420;
+@ContainerWidth = 560;
 
 @ContentPadding = 16;
 
@@ -17,7 +17,7 @@ $Browser = "PrefabBrowser.ui";
 $C.@PageOverlay #MainPage {
   LayoutMode: Middle;
   Group {
-    Anchor: (Width: 500);
+    Anchor: (Width: 600);
     LayoutMode: Top;
     TabNavigation #Tabs {
       Anchor: (Height: 66, Left: 2, Right: 0);
@@ -36,7 +36,7 @@ $C.@PageOverlay #MainPage {
     }
   }
   Group #Main {
-    Anchor: (Width: 500);
+    Anchor: (Width: 600);
     $C.@Container #SelectionView {
       Visible: true;
       #Title {
@@ -91,6 +91,11 @@ $C.@PageOverlay #MainPage {
               LayoutMode: TopScrolling;
               ScrollbarStyle: $C.@DefaultScrollbarStyle;
             }
+            Label #AutoGroup {
+              Text: %mcreator.ui.save.autoGroup;
+              Anchor: (Bottom: 4);
+              Style: (...$C.@DefaultLabelStyle, FontSize: 14, Wrap: true);
+            }
           }
           Group #Pack {
             LayoutMode: Left;
@@ -104,6 +109,14 @@ $C.@PageOverlay #MainPage {
               @Anchor = (Left: 8, Right: 0);
               FlexWeight: 1;
               Value: "";
+            }
+          }
+          Group #AutoReplace {
+            LayoutMode: Left;
+            Anchor: (Height: 35, Bottom: 16);
+            $C.@CheckBoxWithLabel {
+              @Text = %mcreator.ui.save.autoReplace;
+              @Checked = true;
             }
           }
           Group #CreateItem {
@@ -257,51 +270,77 @@ $C.@PageOverlay #BrowserPage {
   LayoutMode: Middle;
   Visible: false;
 
-  $C.@DecoratedContainer {
-    Anchor: (Width: 700, Height: 700);
 
-    #Title {
-      $C.@Title {
-        @Text = %server.customUI.prefabEditorSettings.browser.title;
+  Group {
+    Anchor: (Height: 700);
+    LayoutMode: Center;
+    $C.@DecoratedContainer {
+      Anchor: (Width: 700, Height: 700);
+
+      #Title {
+        $C.@Title {
+          @Text = %server.customUI.prefabEditorSettings.browser.title;
+        }
+      }
+
+      #Content {
+        LayoutMode: Top;
+        Padding: (Full: 16);
+
+        Label #CurrentPath {
+          Anchor: (Bottom: 8, Horizontal: 4);
+          Style: (
+            ...$C.@DefaultLabelStyle,
+            FontSize: 12,
+            TextColor: #6a7d8f,
+          );
+          Text: "";
+        }
+
+        Group #BrowserContent {
+          FlexWeight: 1;
+          $Browser.@PrefabBrowserContent {
+          }
+        }
+
+        Group #BrowserButtons {
+          LayoutMode: Center;
+          Anchor: (Top: 8);
+
+          $C.@TextButton #ConfirmButton {
+            @Sounds = $Sounds.@SaveSettings;
+            @Anchor = (Left: 4, Right: 4);
+            Text: %server.customUI.prefabEditorSettings.browser.confirm;
+            FlexWeight: 1;
+          }
+
+          $C.@SecondaryTextButton #CancelButton {
+            @Sounds = $Sounds.@ButtonsCancel;
+            @Anchor = (Left: 4);
+            Text: %server.customUI.cancel;
+            FlexWeight: 1;
+          }
+        }
       }
     }
+    $C.@Container #BrowserPreviewBackdrop {
+      Anchor: (Left: 10, Top: 0, Width: 600, Height: 700);
 
-    #Content {
-      LayoutMode: Top;
-      Padding: (Full: 16);
-
-      Label #CurrentPath {
-        Anchor: (Bottom: 8, Horizontal: 4);
-        Style: (
-          ...$C.@DefaultLabelStyle,
-          FontSize: 12,
-          TextColor: #6a7d8f,
-        );
-        Text: "";
-      }
-
-      Group #BrowserContent {
-        FlexWeight: 1;
-        $Browser.@PrefabBrowserContent {
+      #Title {
+        $C.@Title {
+          @Text = %server.customUI.prefabBrowser.previewTitle;
         }
       }
 
-      Group #BrowserButtons {
-        LayoutMode: Center;
-        Anchor: (Top: 8);
+      #Content {
+        LayoutMode: Full;
 
-        $C.@TextButton #ConfirmButton {
-          @Sounds = $Sounds.@SaveSettings;
-          @Anchor = (Left: 4, Right: 4);
-          Text: %server.customUI.prefabEditorSettings.browser.confirm;
-          FlexWeight: 1;
-        }
-
-        $C.@SecondaryTextButton #CancelButton {
-          @Sounds = $Sounds.@ButtonsCancel;
-          @Anchor = (Left: 4);
-          Text: %server.customUI.cancel;
-          FlexWeight: 1;
+        PrefabPreviewComponent #BrowserPrefabPreview {
+          AllowDragYaw: true;
+          AllowDragPitch: true;
+          AllowZoom: true;
+          AllowPan: true;
+          ShowAnchor: true;
         }
       }
     }

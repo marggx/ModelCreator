@@ -1,9 +1,9 @@
 package dev.marggx.mcreator.data.extras;
 
-import com.hypixel.hytale.server.core.prefab.selection.standard.BlockSelection;
 import dev.marggx.mcreator.data.blockymodel.Blockymodel;
 import dev.marggx.mcreator.services.TextureService;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import org.joml.Vector3d;
 
 import java.awt.image.BufferedImage;
 import java.util.List;
@@ -12,7 +12,7 @@ import java.util.Map;
 public class BaseModel {
 
     private int blockyId;
-    private BlockSelection selection;
+    private Vector3d position;
     private String name;
     private String pack;
     private List<Blockymodel> blockymodels = new ObjectArrayList<>();
@@ -22,9 +22,9 @@ public class BaseModel {
     public BaseModel() {
     }
 
-    public BaseModel(int blockyId, BlockSelection selection, String name, String pack, List<Blockymodel> blockymodels, BufferedImage texture) {
+    public BaseModel(int blockyId, Vector3d position, String name, String pack, List<Blockymodel> blockymodels, BufferedImage texture) {
         this.blockyId = blockyId;
-        this.selection = selection;
+        this.position = position;
         this.name = name;
         this.pack = pack;
         this.blockymodels = blockymodels;
@@ -51,8 +51,8 @@ public class BaseModel {
         return texture;
     }
 
-    public BlockSelection selection() {
-        return selection;
+    public Vector3d position() {
+        return position;
     }
 
     public String name() {
@@ -89,8 +89,8 @@ public class BaseModel {
         this.texture = TextureService.get().combineImages(this.texture, newTexture);
     }
 
-    public void setSelection(BlockSelection selection) {
-        this.selection = selection;
+    public void setPosition(Vector3d position) {
+        this.position = position;
     }
 
     public void setName(String name) {

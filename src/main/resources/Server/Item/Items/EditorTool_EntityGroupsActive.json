@@ -1,25 +1,25 @@
 {
   "TranslationProperties": {
-    "Name": "mcreator.tool.entityplus.name",
-    "Description": "mcreator.tool.entityplus.description"
+    "Name": "mcreator.tool.entitygroup.name",
+    "Description": "mcreator.tool.entitygroup.description"
   },
-  "Icon": "Icons/Items/EditorTools/MCreatorEntityPlus.png",
+  "Icon": "Icons/Items/EditorTools/MCreatorEntityGroupActive.png",
   "Categories": [
     "Tool.BuilderTool"
   ],
   "SubCategory": "BasicTools",
   "Model": "Items/Tools/Brush/Brush.blockymodel",
-  "Texture": "Items/Tools/EditorTool_MCreatorEntityPlus.png",
+  "Texture": "Items/Tools/EditorTool_MCreatorEntityGroup.png",
   "MaxStack": 1,
   "PlayerAnimationsId": "Item",
   "BuilderTool": {
-    "Id": "Entity",
+    "Id": "EntityGroups",
     "IsBrush": false
   },
   "Interactions": {
-    "Primary": "MCreatorEntityPlusEditUiRootInteraction",
-    "Secondary": "MCreatorEntityPlusEditUiRootInteraction",
-    "Ability3": "MCreatorEntityGenerateUiRootInteraction"
+    "Ability1": "MCreatorGroupCreateRootInteraction",
+    "Ability2": "MCreatorGroupDeleteRootInteraction",
+    "Ability3": "MCreatorGroupToggleRootInteraction"
   },
   "InteractionConfig": {
     "DebugOutlines": true,

@@ -12,7 +12,7 @@
     ],
     "Website": "marggx.dev",
     "Main": "dev.marggx.mcreator.ModelCreatorPlugin",
-    "ServerVersion": "^0.5.1",
+    "ServerVersion": "^0.5.3",
     "Dependencies": {
         "Hytale:AssetModule": "*"
     },

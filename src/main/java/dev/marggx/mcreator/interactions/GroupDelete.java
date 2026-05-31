@@ -14,16 +14,17 @@ import com.hypixel.hytale.server.core.modules.interaction.interaction.config.Sim
 import com.hypixel.hytale.server.core.prefab.selection.standard.BlockSelection;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import dev.marggx.mcreator.services.GroupService;
 import dev.marggx.mcreator.services.HytaleService;
-import dev.marggx.mcreator.ui.SavePage;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 
-public class GenerateInteraction extends SimpleInstantInteraction {
+public class GroupDelete extends SimpleInstantInteraction {
     @Nonnull
-    public static final BuilderCodec<GenerateInteraction> CODEC = BuilderCodec.builder(
-            GenerateInteraction.class, GenerateInteraction::new, SimpleInstantInteraction.CODEC
+    public static final BuilderCodec<GroupDelete> CODEC = BuilderCodec.builder(
+            GroupDelete.class, GroupDelete::new, SimpleInstantInteraction.CODEC
     ).build();
 
     @Override
@@ -38,19 +39,20 @@ public class GenerateInteraction extends SimpleInstantInteraction {
         Store<EntityStore> store = commandBuffer.getStore();
 
         if (!PrototypePlayerBuilderToolSettings.isOkayToDoCommandsOnSelection(ref, playerRef, commandBuffer)) {
-            playerComponent.getPageManager().openCustomPage(ref, store, new SavePage(playerRef, null));
             return;
         }
 
         BuilderToolsPlugin.BuilderState builderState = BuilderToolsPlugin.getState(playerComponent, playerRef);
         BlockSelection builderStateSelection = builderState.getSelection();
         if (builderStateSelection == null) {
-            playerComponent.getPageManager().openCustomPage(ref, store, new SavePage(playerRef, null));
             return;
         }
 
-        BlockSelection selection = HytaleService.get().cloneBlockSelectionWithEntitiesInSelection(builderStateSelection, store);
-
-        playerComponent.getPageManager().openCustomPage(ref, store, new SavePage(playerRef, selection));
+        List<Ref<EntityStore>> entities = HytaleService.get().getRefsFromBlockSelection(builderStateSelection, store);
+        commandBuffer.run((_store -> {
+            for (Ref<EntityStore> entityRef : entities) {
+                GroupService.get().leaveGroup(entityRef, _store, null);
+            }
+        }));
     }
 }

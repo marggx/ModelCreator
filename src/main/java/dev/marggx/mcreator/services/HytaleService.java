@@ -1,20 +1,34 @@
 package dev.marggx.mcreator.services;
 
 import com.hypixel.hytale.assetstore.AssetPack;
+import com.hypixel.hytale.builtin.buildertools.BuilderToolsPlugin;
 import com.hypixel.hytale.builtin.buildertools.prefablist.AssetPrefabFileProvider;
-import com.hypixel.hytale.component.Holder;
+import com.hypixel.hytale.component.*;
 import com.hypixel.hytale.math.vector.Rotation3f;
 import com.hypixel.hytale.server.core.asset.AssetModule;
+import com.hypixel.hytale.server.core.asset.type.item.config.Item;
+import com.hypixel.hytale.server.core.entity.UUIDComponent;
+import com.hypixel.hytale.server.core.entity.entities.BlockEntity;
+import com.hypixel.hytale.server.core.inventory.ItemStack;
+import com.hypixel.hytale.server.core.modules.entity.component.EntityScaleComponent;
 import com.hypixel.hytale.server.core.modules.entity.component.HeadRotation;
+import com.hypixel.hytale.server.core.modules.entity.component.PropComponent;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
+import com.hypixel.hytale.server.core.modules.entity.item.ItemComponent;
+import com.hypixel.hytale.server.core.modules.entity.item.PreventItemMerging;
+import com.hypixel.hytale.server.core.modules.entity.item.PreventPickup;
 import com.hypixel.hytale.server.core.prefab.PrefabStore;
 import com.hypixel.hytale.server.core.prefab.selection.standard.BlockSelection;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import dev.marggx.mcreator.ModelCreatorPlugin;
 import dev.marggx.mcreator.data.blockymodel.BlockymodelVector3d;
 import dev.marggx.mcreator.data.extras.BaseModel;
 import dev.marggx.mcreator.data.extras.Model;
 import dev.marggx.mcreator.utils.Logger;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
+import org.joml.Vector3d;
+import org.joml.Vector3i;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -22,9 +36,11 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 public class HytaleService {
 
+    public static final int NODE_LIMIT = 255;
     private static final HytaleService INSTANCE = new HytaleService();
     private static final Logger LOGGER = Logger.get();
     private final AssetPrefabFileProvider assetProvider = new AssetPrefabFileProvider();
@@ -41,7 +57,7 @@ public class HytaleService {
         }
 
         BlockSelection prefab = PrefabStore.get().getPrefab(path);
-        return getEntitiesFromBlockSelection(prefab);
+        return getHoldersFromBlockSelectionForModel(prefab);
     }
 
     public BlockSelection getBlockSelectionFromPrefab(String prefabPath) {
@@ -64,18 +80,42 @@ public class HytaleService {
         return prefab;
     }
 
-    public List<Holder<EntityStore>> getEntitiesFromBlockSelection(BlockSelection selection) {
-        int xMin = selection.getSelectionMin().x();
-        int zMin = selection.getSelectionMin().z();
-        int width = selection.getSelectionMax().x() - xMin;
-        int depth = selection.getSelectionMax().z() - zMin;
+    public BlockSelection cloneBlockSelectionWithEntitiesInSelection(BlockSelection selection, Store<EntityStore> store) {
+        BlockSelection clonedSelection = new BlockSelection();
+
+        Vector3i min = selection.getSelectionMin();
+        Vector3i max = selection.getSelectionMax();
+        clonedSelection.setSelectionArea(min, max);
+
+        int xMin = min.x();
+        int yMin = min.y();
+        int zMin = min.z();
+        int width = max.x() - xMin;
+        int height = max.y() - yMin;
+        int depth = max.z() - zMin;
+        clonedSelection.setPosition(xMin + width / 2, yMin, zMin + depth / 2);
+        BuilderToolsPlugin.forEachCopyableInSelection(store.getExternalData().getWorld(), xMin, yMin, zMin, width, height, depth, e -> {
+            Holder<EntityStore> holder = store.copyEntity(e);
+            clonedSelection.addEntityFromWorld(holder);
+        });
+
+        return clonedSelection;
+    }
+
+    public List<Ref<EntityStore>> getRefsFromBlockSelection(BlockSelection selection, Store<EntityStore> store) {
+        Vector3i min = selection.getSelectionMin();
+        Vector3i max = selection.getSelectionMax();
+        int width = max.x() - min.x();
+        int height = max.y() - min.y();
+        int depth = max.z() - min.z();
+        List<Ref<EntityStore>> entities = new ReferenceArrayList<>();
+        BuilderToolsPlugin.forEachCopyableInSelection(store.getExternalData().getWorld(), min.x(), min.y(), min.z(), width, height, depth, entities::add);
+        return entities;
+    }
+
+    public List<Holder<EntityStore>> getHoldersFromBlockSelectionForModel(BlockSelection selection) {
         List<Holder<EntityStore>> entities = new ObjectArrayList<>();
         selection.forEachEntity(e -> entities.add(e.clone()));
-        entities.forEach((e) -> {
-            TransformComponent pos = e.getComponent(TransformComponent.getComponentType());
-            if (pos == null) return;
-            pos.getPosition().add(width, 0.0, depth);
-        });
         return entities;
     }
 
@@ -101,7 +141,7 @@ public class HytaleService {
     }
 
 
-    public void createNewItem(BaseModel baseModel) throws IOException {
+    public void createNewItem(BaseModel baseModel, Consumer<Item> onLoaded) throws IOException {
         String content = """
                 {
                   "TranslationProperties": {
@@ -153,6 +193,37 @@ public class HytaleService {
         }
         if (outputPath == null) return;
         Files.writeString(outputPath, content);
+        if (onLoaded == null) return;
+        ModelCreatorPlugin.get().pendingItems.put(name, onLoaded);
+    }
+
+    public void replaceEntitiesWithNewItem(Vector3d pos, String modelId, BlockSelection selection, Store<EntityStore> store) {
+        this.removeEntitiesInSelection(selection, store);
+        this.placeNewItem(pos, modelId, store);
+    }
+
+    public List<Holder<EntityStore>> removeEntitiesInSelection(BlockSelection selection, Store<EntityStore> store) {
+        List<Ref<EntityStore>> refs = this.getRefsFromBlockSelection(selection, store);
+        List<Holder<EntityStore>> holders = new ObjectArrayList<>();
+        for (Ref<EntityStore> ref : refs) {
+            holders.add(store.removeEntity(ref, RemoveReason.REMOVE));
+        }
+        return holders;
+    }
+
+    public Ref<EntityStore> placeNewItem(Vector3d pos, String modelId, Store<EntityStore> store) {
+        Holder<EntityStore> holder = store.getRegistry().newHolder();
+        holder.addComponent(BlockEntity.getComponentType(), new BlockEntity(modelId));
+        holder.addComponent(TransformComponent.getComponentType(), new TransformComponent(pos, new Rotation3f()));
+        holder.addComponent(EntityScaleComponent.getComponentType(), new EntityScaleComponent(2.0F));
+        ItemStack itemStack = new ItemStack(modelId, 1);
+        itemStack.setOverrideDroppedItemAnimation(true);
+        holder.addComponent(ItemComponent.getComponentType(), new ItemComponent(itemStack));
+        holder.addComponent(PreventPickup.getComponentType(), PreventPickup.INSTANCE);
+        holder.addComponent(PreventItemMerging.getComponentType(), PreventItemMerging.INSTANCE);
+        holder.addComponent(PropComponent.getComponentType(), PropComponent.get());
+        holder.ensureComponent(UUIDComponent.getComponentType());
+        return store.addEntity(holder, AddReason.SPAWN);
     }
 
     public String createValidItemName(String name) {

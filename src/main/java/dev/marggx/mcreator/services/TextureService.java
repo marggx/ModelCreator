@@ -16,11 +16,15 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 
 public class TextureService {
 
     private static final TextureService INSTANCE = new TextureService();
+    private Map<String, BufferedImage> bufferedImageCache = new HashMap<>();
     private static final Logger LOGGER = Logger.get();
+
     public static TextureService get() {
         return INSTANCE;
     }
@@ -38,7 +42,7 @@ public class TextureService {
         Graphics2D g = combined.createGraphics();
         this.setRenderHints(g);
 
-        g.setBackground(new java.awt.Color(0,0,0,0));
+        g.setBackground(new java.awt.Color(0, 0, 0, 0));
         g.clearRect(0, 0, maxWidth, totalHeight);
 
         g.drawImage(img1, 0, 0, null);
@@ -47,6 +51,10 @@ public class TextureService {
         g.dispose();
 
         return combined;
+    }
+
+    public void clearCache() {
+        this.bufferedImageCache.clear();
     }
 
     public boolean saveTexture(BaseModel model) {
@@ -74,7 +82,13 @@ public class TextureService {
 
     private BufferedImage getTexture(Path path) throws Exception {
         if (path == null) return null;
-        return ImageIO.read(Files.newInputStream(path));
+        BufferedImage image = bufferedImageCache.get(path.toString());
+        if (image != null) {
+            return image;
+        }
+        image = ImageIO.read(Files.newInputStream(path));
+        bufferedImageCache.put(path.toString(), image);
+        return image;
     }
 
     private Path getTexturePathFromAnyPack(@Nonnull String name) {

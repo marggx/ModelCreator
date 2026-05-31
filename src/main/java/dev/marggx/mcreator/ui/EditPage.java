@@ -1,5 +1,7 @@
 package dev.marggx.mcreator.ui;
 
+import com.hypixel.hytale.builtin.buildertools.BuilderToolsPlugin;
+import com.hypixel.hytale.builtin.buildertools.snapshot.EntityTransformSnapshot;
 import com.hypixel.hytale.codec.Codec;
 import com.hypixel.hytale.codec.KeyedCodec;
 import com.hypixel.hytale.codec.builder.BuilderCodec;
@@ -166,19 +168,20 @@ public class EditPage extends InteractiveCustomUIPage<EditPage.PageData> {
                 if (originalScale != null) {
                     scale.setScale(originalScale.getScale());
                 }
+                pushEntityTransformHistory(ref);
                 playerComponent.getPageManager().setPage(ref, store, Page.None);
                 return;
             }
 
             case ValueChanged: {
-                handleValueChanged(cBuilder, data);
+                handleValueChanged(cBuilder, ref, data);
                 break;
             }
         }
         this.sendUpdate(cBuilder);
     }
 
-    private void handleValueChanged(@Nonnull UICommandBuilder cBuilder, @Nonnull EditPage.PageData data) {
+    private void handleValueChanged(@Nonnull UICommandBuilder cBuilder, @Nonnull Ref<EntityStore> ref, @Nonnull EditPage.PageData data) {
         if (data.value.isBlank()) {
             return;
         }
@@ -214,6 +217,16 @@ public class EditPage extends InteractiveCustomUIPage<EditPage.PageData> {
                 scale.setScale(Float.parseFloat(data.value));
                 break;
         }
+        pushEntityTransformHistory(ref);
+    }
+
+    public void pushEntityTransformHistory(@Nonnull Ref<EntityStore> ref) {
+        Player player = ref.getStore().getComponent(ref, Player.getComponentType());
+        PlayerRef playerRef = ref.getStore().getComponent(ref, PlayerRef.getComponentType());
+        assert player != null;
+        assert playerRef != null;
+        BuilderToolsPlugin.BuilderState state = BuilderToolsPlugin.getState(player, playerRef);
+        state.pushHistory(BuilderToolsPlugin.Action.ENTITY_TRANSFORM, new EntityTransformSnapshot(entityRef, entityRef.getStore()));
     }
 
     private void handleInputType(UICommandBuilder cBuilder, EditPage.PageData data) {

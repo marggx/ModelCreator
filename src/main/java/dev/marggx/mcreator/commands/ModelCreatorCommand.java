@@ -2,7 +2,6 @@ package dev.marggx.mcreator.commands;
 
 import com.hypixel.hytale.builtin.buildertools.BuilderToolsPlugin;
 import com.hypixel.hytale.builtin.buildertools.PrototypePlayerBuilderToolSettings;
-import com.hypixel.hytale.component.Holder;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
@@ -13,6 +12,7 @@ import com.hypixel.hytale.server.core.prefab.selection.standard.BlockSelection;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import dev.marggx.mcreator.services.HytaleService;
 import dev.marggx.mcreator.ui.SavePage;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 
@@ -48,20 +48,7 @@ public class ModelCreatorCommand extends AbstractCommandCollection {
                 return;
             }
 
-            BlockSelection selection = new BlockSelection();
-            selection.setSelectionArea(builderStateSelection.getSelectionMin(), builderStateSelection.getSelectionMax());
-
-            int xMin = selection.getSelectionMin().x();
-            int yMin = selection.getSelectionMin().y();
-            int zMin = selection.getSelectionMin().z();
-            int width = selection.getSelectionMax().x() - xMin;
-            int height = selection.getSelectionMax().y() - yMin;
-            int depth = selection.getSelectionMax().z() - zMin;
-            selection.setPosition(xMin + width/2, yMin, zMin + depth/2);
-            BuilderToolsPlugin.forEachCopyableInSelection(world, xMin, yMin, zMin, width, height, depth, e -> {
-                Holder<EntityStore> holder = store.copyEntity(e);
-                selection.addEntityFromWorld(holder);
-            });
+            BlockSelection selection = HytaleService.get().cloneBlockSelectionWithEntitiesInSelection(builderStateSelection, store);
 
             playerComponent.getPageManager().openCustomPage(ref, store, new SavePage(playerRef, selection));
         }
