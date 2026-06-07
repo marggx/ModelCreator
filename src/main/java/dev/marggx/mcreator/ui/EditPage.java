@@ -28,6 +28,9 @@ import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import dev.marggx.mcreator.components.GroupComponent;
+import dev.marggx.mcreator.components.GroupMembershipComponent;
+import dev.marggx.mcreator.services.GroupService;
 import dev.marggx.mcreator.utils.Logger;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 import org.joml.Vector3d;
@@ -158,6 +161,8 @@ public class EditPage extends InteractiveCustomUIPage<EditPage.PageData> {
             }
 
             case Cancel: {
+                Vector3d posDiff = new Vector3d(transform.getPosition());
+                posDiff.sub(originalTransform.getPosition());
                 if (originalTransform != null) {
                     transform.setPosition(originalTransform.getPosition());
                     transform.setRotation(originalTransform.getRotation());
@@ -168,6 +173,7 @@ public class EditPage extends InteractiveCustomUIPage<EditPage.PageData> {
                 if (originalScale != null) {
                     scale.setScale(originalScale.getScale());
                 }
+                this.moveGroupIfExists(ref.getStore(), posDiff);
                 pushEntityTransformHistory(ref);
                 playerComponent.getPageManager().setPage(ref, store, Page.None);
                 return;
@@ -185,15 +191,19 @@ public class EditPage extends InteractiveCustomUIPage<EditPage.PageData> {
         if (data.value.isBlank()) {
             return;
         }
+        Vector3d posDiff = new Vector3d(transform.getPosition());
         switch (data.selector) {
             case PosX:
                 transform.getPosition().x = Float.parseFloat(data.value);
+                posDiff.sub(transform.getPosition());
                 break;
             case PosY:
                 transform.getPosition().y = Float.parseFloat(data.value);
+                posDiff.sub(transform.getPosition());
                 break;
             case PosZ:
                 transform.getPosition().z = Float.parseFloat(data.value);
+                posDiff.sub(transform.getPosition());
                 break;
             case RotPitch:
                 transform.getRotation().x = Float.parseFloat(data.value);
@@ -217,7 +227,27 @@ public class EditPage extends InteractiveCustomUIPage<EditPage.PageData> {
                 scale.setScale(Float.parseFloat(data.value));
                 break;
         }
+        this.moveGroupIfExists(ref.getStore(), posDiff);
         pushEntityTransformHistory(ref);
+    }
+
+    private void moveGroupIfExists(Store<EntityStore> store, Vector3d posDiff) {
+        GroupMembershipComponent groupMembershipComponent = store.getComponent(entityRef, GroupMembershipComponent.getComponentType());
+        if  (groupMembershipComponent != null) {
+            Ref<EntityStore> groupRef = store.getExternalData().getRefFromUUID(groupMembershipComponent.getGroupUuid());
+            if (groupRef != null) {
+                GroupComponent groupComponent = store.getComponent(groupRef, GroupComponent.getComponentType());
+                assert groupComponent != null;
+
+                groupComponent.forEachMember((memberRef) -> {
+                    TransformComponent memberTransformComponent = store.getComponent(memberRef, TransformComponent.getComponentType());
+                    assert memberTransformComponent != null;
+
+                    memberTransformComponent.getPosition().sub(posDiff);
+                    memberTransformComponent.markChunkDirty(store);
+                }, entityRef);
+            }
+        }
     }
 
     public void pushEntityTransformHistory(@Nonnull Ref<EntityStore> ref) {

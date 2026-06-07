@@ -123,7 +123,7 @@ public class BlockymodelService {
                 LOGGER.severe("Failed, model.blockymodel() seem to be empty for: " + base.name());
                 return false;
             }
-            LOGGER.severe("Node Count: " + countNodes(blockymodelBase) + " for " + base.name());
+            LOGGER.info("Node Count: " + countNodes(blockymodelBase) + " for " + base.name());
 
             Path p = getBlockymodelPathForPack(base.pack());
             if (p == null) return false;

@@ -351,10 +351,12 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
                             playerComponent,
                             playerRefComponent,
                             (r, builderState, componentAccessor) -> {
-                                boolean created = mapperService.createBlockymodel(modelGroup.entities, modelGroup.center, data.pack, name, data.createItem, (item) -> {
+                                Vector3d center = new Vector3d(modelGroup.center);
+                                center.y = MathUtil.floor(center.y());
+                                boolean created = mapperService.createBlockymodel(modelGroup.entities, center, data.pack, name, data.createItem, (item) -> {
                                     playerRefComponent.getReference().getStore().getExternalData().getWorld().execute(() -> {
                                         Vector3d pos = new Vector3d(selection.getX(), selection.getSelectionMin().y(), selection.getZ());
-                                        pos.add(modelGroup.center);
+                                        pos.add(center);
                                         if (data.autoReplace) {
                                             Ref<EntityStore> newRef = HytaleService.get().placeNewItem(pos, HytaleService.get().createValidItemName(name), playerRefComponent.getReference().getStore());
                                             snapshot.refs.put(name, newRef);

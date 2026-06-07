@@ -7,12 +7,14 @@ import com.hypixel.hytale.component.CommandBuffer;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.protocol.InteractionType;
+import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.InteractionContext;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.modules.interaction.interaction.CooldownHandler;
 import com.hypixel.hytale.server.core.modules.interaction.interaction.config.SimpleInstantInteraction;
 import com.hypixel.hytale.server.core.prefab.selection.standard.BlockSelection;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
+import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import dev.marggx.mcreator.services.GroupService;
 import dev.marggx.mcreator.services.HytaleService;
@@ -53,6 +55,7 @@ public class GroupDelete extends SimpleInstantInteraction {
             for (Ref<EntityStore> entityRef : entities) {
                 GroupService.get().leaveGroup(entityRef, _store, null);
             }
+            Universe.get().sendMessage(Message.raw("Remove groups done!"));
         }));
     }
 }

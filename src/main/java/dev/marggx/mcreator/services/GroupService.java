@@ -77,7 +77,7 @@ public class GroupService {
         GroupMembershipComponent groupMembershipComponent = store.getComponent(entityRef, GroupMembershipComponent.getComponentType());
 
         if (groupMembershipComponent != null && !groupMembershipComponent.getGroupUuid().equals(uuid)) {
-            this.leaveGroup(entityRef, store, groupRef);
+            this.leaveGroup(entityRef, store, null);
         }
 
         store.putComponent(entityRef, GroupMembershipComponent.getComponentType(), new GroupMembershipComponent(uuid));

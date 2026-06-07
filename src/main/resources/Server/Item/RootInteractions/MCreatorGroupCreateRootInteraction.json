@@ -1,6 +1,6 @@
 {
   "Cooldown": {
-    "Cooldown": 1
+    "Cooldown": 0.5
   },
   "Interactions": [
     "MCreatorGroupCreate"

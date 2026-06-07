@@ -32,7 +32,7 @@ public class BlockymodelShape {
             .add()
             .append(new KeyedCodec<>("visible", Codec.BOOLEAN, true, true), (i, v) -> i.visible = true, i -> i.visible)
             .add()
-            .append(new KeyedCodec<>("doubleSided", Codec.BOOLEAN, true, true), (i, v) -> i.doubleSided = false, i -> i.doubleSided)
+            .append(new KeyedCodec<>("doubleSided", Codec.BOOLEAN, true, true), (i, v) -> i.doubleSided = v, i -> i.doubleSided)
             .add()
             .append(new KeyedCodec<>("shadingMode", Codec.STRING, true, true), (i, v) -> i.shadingMode = BlockymodelShapeShadingMode.fromValue(v), (i) -> {
                 return i.shadingMode == null ? null : i.shadingMode.getValue();
