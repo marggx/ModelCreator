@@ -22,7 +22,7 @@ import java.util.*;
 
 public class GroupService {
 
-    private static final double MAX_GAP_FOR_AUTO_GROUPS = 1.5;
+    private static final double MAX_DIST_FOR_AUTO_GROUPS = 1.5;
     private static final GroupService INSTANCE = new GroupService();
     private static final Logger LOGGER = Logger.get();
 
@@ -211,13 +211,13 @@ public class GroupService {
     }
 
     public void autoCreateGroupsBySelection(@Nonnull BlockSelection selection, @Nonnull Store<EntityStore> store) {
-        List<RefGroup> groups = createGroupsByPosAndNodeCount(selection, store);
+        List<RefGroup> groups = createGroupsByPosAndNodeCount(selection, store, null);
         for (RefGroup group : groups) {
             this.createAndJoinGroup(group.entities, store, null);
         }
     }
 
-    public List<RefGroup> createGroupsByPosAndNodeCount(@Nonnull BlockSelection selection, @Nonnull Store<EntityStore> store) {
+    public List<RefGroup> createGroupsByPosAndNodeCount(@Nonnull BlockSelection selection, @Nonnull Store<EntityStore> store, Double maxDist) {
         List<RefGroup> groups = new ObjectArrayList<>();
         List<Ref<EntityStore>> refs = HytaleService.get().getRefsFromBlockSelection(selection, store);
         Set<Ref<EntityStore>> used = new HashSet<>();
@@ -232,7 +232,7 @@ public class GroupService {
                 continue;
             }
 
-            RefGroup group = new RefGroup(starter, store);
+            RefGroup group = new RefGroup(starter, store, maxDist != null ? maxDist : MAX_DIST_FOR_AUTO_GROUPS);
             used.add(starter);
 
             boolean changed;
@@ -258,7 +258,7 @@ public class GroupService {
         return groups;
     }
 
-    public List<ModelGroup> createGroupsByPosAndNodeCount(@Nonnull List<Model> models) {
+    public List<ModelGroup> createGroupsByPosAndNodeCount(@Nonnull List<Model> models, Double maxDist) {
         List<ModelGroup> groups = new ObjectArrayList<>();
         Set<Model> used = new HashSet<>();
 
@@ -272,7 +272,7 @@ public class GroupService {
                 continue;
             }
 
-            ModelGroup group = new ModelGroup(starter);
+            ModelGroup group = new ModelGroup(starter, maxDist != null ? maxDist : MAX_DIST_FOR_AUTO_GROUPS);
             used.add(starter);
 
             boolean changed;
@@ -316,17 +316,19 @@ public class GroupService {
         public List<Ref<EntityStore>> entities = new ObjectArrayList<>();
         public final Vector3d center = new Vector3d();
         private final Vector3d tmp = new Vector3d();
+        private final double maxDist;
         public int blockyNodeCount = 0;
 
-        public RefGroup(Ref<EntityStore> firstRef, Store<EntityStore> store) {
+        public RefGroup(Ref<EntityStore> firstRef, Store<EntityStore> store, double maxDist) {
             center.set(getEntityPos(firstRef, store));
             entities.add(firstRef);
             blockyNodeCount += getBlockyNodeCount(firstRef, store);
+            this.maxDist = maxDist;
         }
 
         public boolean tryAddMember(@Nonnull Ref<EntityStore> entityRef, @Nonnull Store<EntityStore> store) {
             Vector3d pos = getEntityPos(entityRef, store);
-            boolean inRange = center.distance(pos) <= MAX_GAP_FOR_AUTO_GROUPS;
+            boolean inRange = center.distance(pos) <= maxDist;
 
             if (!inRange) {
                 return false;
@@ -360,17 +362,19 @@ public class GroupService {
         public List<Model> entities = new ObjectArrayList<>();
         public final Vector3d center = new Vector3d();
         private final Vector3d tmp = new Vector3d();
+        private final double maxDist;
         public int blockyNodeCount = 0;
 
-        public ModelGroup(Model firstModel) {
+        public ModelGroup(Model firstModel, double maxDist) {
             center.set(getEntityPos(firstModel.holder()));
             entities.add(firstModel);
             blockyNodeCount += getBlockyNodeCount(firstModel.holder());
+            this.maxDist = maxDist;
         }
 
         public boolean tryAddMember(@Nonnull Model model) {
             Vector3d pos = getEntityPos(model.holder());
-            boolean inRange = center.distance(pos) <= MAX_GAP_FOR_AUTO_GROUPS;
+            boolean inRange = center.distance(pos) <= maxDist;
 
             if (!inRange) {
                 return false;

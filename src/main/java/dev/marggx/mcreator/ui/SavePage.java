@@ -155,6 +155,7 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
                         .append(PageData.NAME, "#SelectionView #Name #NameInput.Value")
                         .append(PageData.CREATE_ITEM, "#SelectionView #CreateItem #CheckBox.Value")
                         .append(PageData.AUTO_REPLACE, "#SelectionView #AutoReplace #CheckBox.Value")
+                        .append(PageData.MAX_GROUPING_DIST, "#SelectionView #GroupingDist #DistInput.Value")
         );
         uiEventBuilder.addEventBinding(CustomUIEventBindingType.Activating, "#PrefabView #CancelButton", new EventData().append(PageData.ACTION, PageData.Action.Cancel.name()));
         uiEventBuilder.addEventBinding(
@@ -342,7 +343,7 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
                     snapshot.holders = HytaleService.get().removeEntitiesInSelection(selection, store);
                     BuilderToolsPlugin.getState(playerComponent, playerRef).pushHistory(MCreatorActions.BLOCKY_REPLACEMENT_SNAPSHOT, snapshot);
                 }
-                List<GroupService.ModelGroup> modelGroups = GroupService.get().createGroupsByPosAndNodeCount(models);
+                List<GroupService.ModelGroup> modelGroups = GroupService.get().createGroupsByPosAndNodeCount(models, data.maxGroupingDist);
                 int counter = 0;
                 for (GroupService.ModelGroup modelGroup : modelGroups) {
                     String name = data.name + "_" + counter;
@@ -853,6 +854,7 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
         public static final String CREATE_ITEM = "@CreateItem";
         public static final String AUTO_GROUP = "@AutoGroup";
         public static final String AUTO_REPLACE = "@AutoReplace";
+        public static final String MAX_GROUPING_DIST = "@MaxGroupingDist";
         public static final String BROWSER_FILE = "File";
         public static final String BROWSER_ROOT = "@BrowserRoot";
         public static final String BROWSER_SEARCH = "@BrowserSearch";
@@ -879,6 +881,8 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
                 .add()
                 .append(new KeyedCodec<>(AUTO_REPLACE, Codec.BOOLEAN), (o, autoReplace) -> o.autoReplace = autoReplace, o -> o.autoReplace)
                 .add()
+                .append(new KeyedCodec<>(MAX_GROUPING_DIST, Codec.DOUBLE), (o, maxGroupingDist) -> o.maxGroupingDist = maxGroupingDist, o -> o.maxGroupingDist)
+                .add()
                 .append(new KeyedCodec<>(BROWSER_FILE, Codec.STRING), (o, browserFile) -> o.browserFile = browserFile, o -> o.browserFile)
                 .add()
                 .append(new KeyedCodec<>(BROWSER_ROOT, Codec.STRING), (o, browserRootStr) -> o.browserRootStr = browserRootStr, o -> o.browserRootStr)
@@ -898,6 +902,7 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
         public String browserFile;
         public String browserRootStr;
         public String browserSearchStr;
+        public double maxGroupingDist;
 
         public PageData() {
         }

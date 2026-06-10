@@ -96,6 +96,24 @@ $C.@PageOverlay #MainPage {
               Anchor: (Bottom: 4);
               Style: (...$C.@DefaultLabelStyle, FontSize: 14, Wrap: true);
             }
+            Group #GroupingDist {
+              LayoutMode: Left;
+              Anchor: (Bottom: 4);
+
+              Label #Label {
+                Anchor: (Left: 0, Top: 8);
+                Text: %mcreator.ui.save.groupingDist;
+                Style: $C.@DefaultLabelStyle;
+              }
+
+              $C.@NumberField #DistInput {
+                @Anchor = (Left: 8, Right: 8);
+                FlexWeight: 1;
+                MaxLength: 1024;
+                Value: 1.5;
+                Format: (MaxDecimalPlaces: 1, DefaultValue: 1.5);
+              }
+            }
           }
           Group #Pack {
             LayoutMode: Left;
