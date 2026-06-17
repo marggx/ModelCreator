@@ -109,7 +109,7 @@ public class MapperService {
 
         BlockymodelBase blockymodelBase = blockymodelService.loadBlockymodelBase(model.path());
         if (blockymodelBase == null) {
-            LOGGER.warning("Model " + model.id() + " has no blockymodel. Cannot create blockymodel.");
+            LOGGER.severe("Model " + model.id() + " has no blockymodel. Cannot create blockymodel.");
             return null;
         }
         model.setBlockymodel(blockymodelBase);

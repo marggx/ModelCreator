@@ -58,6 +58,7 @@ public class BlockymodelService {
     }
 
     public BlockymodelBase loadBlockymodelBase(String path) {
+        if (path == null) return null;
         Path p = getBlockymodelPathFromAnyPack(path);
         if (p == null) return null;
         return load(p);
@@ -310,6 +311,10 @@ public class BlockymodelService {
         if (attachments == null) return;
 
         for (ModelAttachment attachment : attachments) {
+            if (attachment.getModel() == null) {
+                Logger.get().severe("Attachment for model: " +  model.id() + " is null! Texture Name: " +  attachment.getTexture());
+                continue;
+            };
             BlockymodelBase blockymodelBase = this.loadBlockymodelBase(attachment.getModel());
             if (blockymodelBase == null) continue;
 
@@ -327,6 +332,10 @@ public class BlockymodelService {
 
         int counter = 0;
         for (ModelAttachment attachment : attachments) {
+            if (attachment.getModel() == null) {
+                Logger.get().severe("Attachment for model: " +  model.id() + " is null! Texture Name: " +  attachment.getTexture());
+                continue;
+            };
             BlockymodelBase blockymodelBase = this.loadBlockymodelBase(attachment.getModel());
             if (blockymodelBase == null) continue;
             counter += countNodes(blockymodelBase);
