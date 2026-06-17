@@ -293,7 +293,7 @@ public class BlockymodelService {
     }
 
     private int countNodes(Blockymodel blockyNode) {
-        int counter = 1;
+        int counter = 0;
         Blockymodel[] nodes = blockyNode.children;
 
         if (nodes == null) return counter;
