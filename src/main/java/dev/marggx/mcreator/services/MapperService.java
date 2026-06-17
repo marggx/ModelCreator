@@ -72,7 +72,7 @@ public class MapperService {
             } catch (IOException e) {
                 LOGGER.severe("Failed to create new item for blockymodel: " + model.name(), e);
             }
-        }, 3L, TimeUnit.SECONDS);
+        }, 5L, TimeUnit.SECONDS);
         return true;
     }
 

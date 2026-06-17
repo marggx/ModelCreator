@@ -354,7 +354,9 @@ public class GroupService {
         private int getBlockyNodeCount(Ref<EntityStore> ref, Store<EntityStore> store) {
             Model model = blockymodelService.loadModelFromHolder(store.copyEntity(ref));
             BlockymodelBase blockymodelBase = blockymodelService.loadBlockymodelBase(model.path());
-            return blockymodelService.countNodes(blockymodelBase);
+            int count = blockymodelService.countNodes(blockymodelBase);
+            count += blockymodelService.countAttachmentsNodes(model);
+            return count;
         }
     }
 
@@ -400,7 +402,9 @@ public class GroupService {
         private int getBlockyNodeCount(Holder<EntityStore> holder) {
             Model model = blockymodelService.loadModelFromHolder(holder);
             BlockymodelBase blockymodelBase = blockymodelService.loadBlockymodelBase(model.path());
-            return blockymodelService.countNodes(blockymodelBase);
+            int count = blockymodelService.countNodes(blockymodelBase);
+            count += blockymodelService.countAttachmentsNodes(model);
+            return count;
         }
     }
 }

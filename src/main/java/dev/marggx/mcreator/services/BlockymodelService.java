@@ -168,6 +168,7 @@ public class BlockymodelService {
 
     private void getAndSetModelAndTexturePaths(Model model) {
         Item item = getItemFromAssetsById(model.id());
+        if (item == null) return;
         if (item.hasBlockType()) {
             model.setType(Model.ModelType.BLOCK);
         } else {
@@ -292,7 +293,7 @@ public class BlockymodelService {
     }
 
     private int countNodes(Blockymodel blockyNode) {
-        int counter = 0;
+        int counter = 1;
         Blockymodel[] nodes = blockyNode.children;
 
         if (nodes == null) return counter;
@@ -318,5 +319,18 @@ public class BlockymodelService {
                 model.blockymodel().addNode(node);
             }
         }
+    }
+
+    public int countAttachmentsNodes(Model model) {
+        ModelAttachment[] attachments = model.attachedModels();
+        if (attachments == null) return 0;
+
+        int counter = 0;
+        for (ModelAttachment attachment : attachments) {
+            BlockymodelBase blockymodelBase = this.loadBlockymodelBase(attachment.getModel());
+            if (blockymodelBase == null) continue;
+            counter += countNodes(blockymodelBase);
+        }
+        return counter;
     }
 }
