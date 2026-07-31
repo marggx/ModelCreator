@@ -1,6 +1,7 @@
 package dev.marggx.mcreator.services;
 
 import com.hypixel.hytale.component.Holder;
+import com.hypixel.hytale.math.shape.Box;
 import com.hypixel.hytale.math.util.MathUtil;
 import com.hypixel.hytale.math.vector.Rotation3f;
 import com.hypixel.hytale.server.core.HytaleServer;
@@ -44,7 +45,7 @@ public class MapperService {
         if (blockymodels == null) return false;
 
         Vector3d position = new Vector3d(prefab.getX(), prefab.getY(), prefab.getZ());
-        return createBlockymodel(blockymodels, position, pack, name, createNewItem, null);
+        return createBlockymodel(blockymodels, position, null, pack, name, createNewItem, null);
     }
 
     public boolean createBlockymodelFromBlockSelection(BlockSelection selection, String pack, String name, boolean createNewItem) {
@@ -52,11 +53,11 @@ public class MapperService {
         if (blockymodels == null) return false;
 
         Vector3d position = new Vector3d(selection.getX(), selection.getY(), selection.getZ());
-        return createBlockymodel(blockymodels, position, pack, name, createNewItem, null);
+        return createBlockymodel(blockymodels, position, null, pack, name, createNewItem, null);
     }
 
-    public boolean createBlockymodel(List<Model> blockymodels, Vector3d position, String pack, String name, boolean createNewItem, Consumer<Item> onLoaded) {
-        BaseModel base = new BaseModel(600, position, null, null, null, null);
+    public boolean createBlockymodel(List<Model> blockymodels, Vector3d position, Box hitbox, String pack, String name, boolean createNewItem, Consumer<Item> onLoaded) {
+        BaseModel base = new BaseModel(600, position, null, null, null, null, hitbox);
         BaseModel model = createBlockymodel(blockymodels, base);
 
         model.setName(name);
@@ -80,6 +81,13 @@ public class MapperService {
         boolean valid = model.validate();
         if (!valid) return false;
 
+        if (model.hitBox() != null) {
+            try {
+                hytaleService.createNewHitbox(model);
+            } catch (IOException e) {
+                Logger.get().severe("Could not create Hitbox for model: " + model.name());
+            }
+        }
         return blockymodelService.saveBlockymodelBase(model) && textureService.saveTexture(model);
     }
 

@@ -1,5 +1,6 @@
 package dev.marggx.mcreator.data.extras;
 
+import com.hypixel.hytale.math.shape.Box;
 import dev.marggx.mcreator.data.blockymodel.Blockymodel;
 import dev.marggx.mcreator.services.TextureService;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -18,17 +19,19 @@ public class BaseModel {
     private List<Blockymodel> blockymodels = new ObjectArrayList<>();
     private BufferedImage texture;
     private Map<String, Integer> textureCache;
+    private Box hitbox;
 
     public BaseModel() {
     }
 
-    public BaseModel(int blockyId, Vector3d position, String name, String pack, List<Blockymodel> blockymodels, BufferedImage texture) {
+    public BaseModel(int blockyId, Vector3d position, String name, String pack, List<Blockymodel> blockymodels, BufferedImage texture, Box hitbox) {
         this.blockyId = blockyId;
         this.position = position;
         this.name = name;
         this.pack = pack;
         this.blockymodels = blockymodels;
         this.texture = texture;
+        this.hitbox = hitbox;
     }
 
     public int blockyId() {
@@ -62,6 +65,8 @@ public class BaseModel {
     public String pack() {
         return pack;
     }
+
+    public Box hitBox() {return  hitbox;}
 
     public void setBlockymodels(List<Blockymodel> blockymodels) {
         this.blockymodels = blockymodels;
@@ -100,6 +105,8 @@ public class BaseModel {
     public void setPack(String pack) {
         this.pack = pack;
     }
+
+    public void setHitbox(Box hitbox) {this.hitbox = hitbox;}
 
     public boolean validate() {
         return name != null && pack != null && !blockymodels.isEmpty() && texture != null;

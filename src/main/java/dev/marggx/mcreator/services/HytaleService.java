@@ -4,6 +4,8 @@ import com.hypixel.hytale.assetstore.AssetPack;
 import com.hypixel.hytale.builtin.buildertools.BuilderToolsPlugin;
 import com.hypixel.hytale.builtin.buildertools.prefablist.AssetPrefabFileProvider;
 import com.hypixel.hytale.component.*;
+import com.hypixel.hytale.math.shape.Box;
+import com.hypixel.hytale.math.util.MathUtil;
 import com.hypixel.hytale.math.vector.Rotation3f;
 import com.hypixel.hytale.server.core.asset.AssetModule;
 import com.hypixel.hytale.server.core.asset.type.item.config.Item;
@@ -158,12 +160,14 @@ public class HytaleService {
                     "Material": "Solid",
                     "DrawType": "Model",
                     "CustomModel": "<ModelPath>",
+                    "VariantRotation": "NESW",
                     "CustomModelTexture": [
                       {
                         "Texture": "<TexturePath>",
                         "Weight": 1
                       }
                     ],
+                    <Hitbox>
                     "ParticleColor": "#0000f4"
                   },
                   "PlayerAnimationsId": "Block",
@@ -174,10 +178,13 @@ public class HytaleService {
                   }
                 }
                 """;
-
         String name = createValidItemName(baseModel.name());
+        Box hitbox = baseModel.hitBox();
 
         content = content
+                .replace("<Hitbox>", hitbox != null ? """
+                "HitboxType": "<Name>",
+                """ : "" )
                 .replace("<Name>", name)
                 .replace("<ModelPath>", "Blocks/" + baseModel.name() + ".blockymodel")
                 .replace("<TexturePath>", "Blocks/" + baseModel.name() + ".png");
@@ -191,10 +198,60 @@ public class HytaleService {
             }
             outputPath = outputPath.resolve(name + ".json");
         }
+
         if (outputPath == null) return;
         Files.writeString(outputPath, content);
+
         if (onLoaded == null) return;
         ModelCreatorPlugin.get().pendingItems.put(name, onLoaded);
+    }
+
+    public void createNewHitbox(BaseModel baseModel) throws IOException {
+        String content = """
+                 {
+                   "Boxes": [
+                     {
+                       "Min": {
+                         "X": <minX>,
+                         "Y": <minY>,
+                         "Z": <minZ>
+                       },
+                       "Max": {
+                         "X": <maxX>,
+                         "Y": <maxY>,
+                         "Z": <maxZ>
+                       }
+                     }
+                   ]
+                 }
+                """;
+
+        String name = createValidItemName(baseModel.name());
+        Box hitbox = baseModel.hitBox();
+
+        Path outputPath = null;
+        for (AssetPack pack : AssetModule.get().getAssetPacks()) {
+            if (!pack.getName().equals(baseModel.pack())) continue;
+            outputPath = pack.getRoot().resolve("Server").resolve("Item").resolve("Block").resolve("Hitboxes");
+            if (!Files.exists(outputPath)) {
+                Files.createDirectories(outputPath);
+            }
+            outputPath = outputPath.resolve(name + ".json");
+        }
+
+        if (outputPath != null && hitbox != null) {
+            content = content
+                    .replace("<minX>", String.valueOf(MathUtil.round(hitbox.min.x, 2)))
+                    .replace("<minY>", String.valueOf(MathUtil.round(hitbox.min.y, 2)))
+                    .replace("<minZ>", String.valueOf(MathUtil.round(hitbox.min.z, 2)))
+                    .replace("<maxX>", String.valueOf(MathUtil.round(hitbox.max.x, 2)))
+                    .replace("<maxY>", String.valueOf(MathUtil.round(hitbox.max.y, 2)))
+                    .replace("<maxZ>", String.valueOf(MathUtil.round(hitbox.max.z, 2)));
+            Files.writeString(outputPath, content);
+        }
+
+        if (outputPath == null) return;
+        Files.writeString(outputPath, content);
     }
 
     public void replaceEntitiesWithNewItem(Vector3d pos, String modelId, BlockSelection selection, Store<EntityStore> store) {

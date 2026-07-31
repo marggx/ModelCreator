@@ -22,7 +22,7 @@ import java.util.Map;
 public class TextureService {
 
     private static final TextureService INSTANCE = new TextureService();
-    private Map<String, BufferedImage> bufferedImageCache = new HashMap<>();
+    private final Map<String, BufferedImage> bufferedImageCache = new HashMap<>();
     private static final Logger LOGGER = Logger.get();
 
     public static TextureService get() {

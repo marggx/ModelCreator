@@ -13,6 +13,7 @@ import com.hypixel.hytale.common.util.PathUtil;
 import com.hypixel.hytale.component.Holder;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.math.shape.Box;
 import com.hypixel.hytale.math.util.ChunkUtil;
 import com.hypixel.hytale.math.util.MathUtil;
 import com.hypixel.hytale.protocol.Color;
@@ -74,8 +75,8 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
     private BlockSelection selection;
     private List<Model> modelsSelection = new ObjectArrayList<>();
     private List<Model> modelsPrefab = new ObjectArrayList<>();
-    private List<Model> unselectedModelsSelection = new ObjectArrayList<>();
-    private List<Model> unselectedModelsPrefab = new ObjectArrayList<>();
+    private final List<Model> unselectedModelsSelection = new ObjectArrayList<>();
+    private final List<Model> unselectedModelsPrefab = new ObjectArrayList<>();
     private Path browserRoot;
     private Path browserCurrent;
     private String selectedPath;
@@ -156,6 +157,7 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
                         .append(PageData.CREATE_ITEM, "#SelectionView #CreateItem #CheckBox.Value")
                         .append(PageData.AUTO_REPLACE, "#SelectionView #AutoReplace #CheckBox.Value")
                         .append(PageData.MAX_GROUPING_DIST, "#SelectionView #GroupingDist #DistInput.Value")
+                        .append(PageData.DISABLE_AUTO_GROUPING, "#SelectionView #DisableAutoGrouping #CheckBox.Value")
         );
         uiEventBuilder.addEventBinding(CustomUIEventBindingType.Activating, "#PrefabView #CancelButton", new EventData().append(PageData.ACTION, PageData.Action.Cancel.name()));
         uiEventBuilder.addEventBinding(
@@ -196,6 +198,12 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
                 CustomUIEventBindingType.Activating,
                 "#BrowserPage #CancelButton",
                 new EventData().append(PageData.ACTION, PageData.Action.CancelBrowser.name())
+        );
+        uiEventBuilder.addEventBinding(
+                CustomUIEventBindingType.ValueChanged, "#SelectionView #DisableAutoGrouping #CheckBox",
+                new EventData()
+                        .append(PageData.ACTION, PageData.Action.AutoGroupingChanged.name())
+                        .append(PageData.CHECKED, "#SelectionView #DisableAutoGrouping #CheckBox.Value")
         );
         uiCommandBuilder.set("#BrowserPage.Visible", false);
     }
@@ -343,21 +351,51 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
                     snapshot.holders = HytaleService.get().removeEntitiesInSelection(selection, store);
                     BuilderToolsPlugin.getState(playerComponent, playerRef).pushHistory(MCreatorActions.BLOCKY_REPLACEMENT_SNAPSHOT, snapshot);
                 }
-                List<GroupService.ModelGroup> modelGroups = GroupService.get().createGroupsByPosAndNodeCount(models, data.maxGroupingDist);
+                if (data.disableAutoGroup) {
+                    Vector3d max = new Vector3d(selection.getSelectionMax());
+                    Vector3d min = new Vector3d(selection.getSelectionMin());
+
+                    max.add(new Vector3d(1.0));
+                    Vector3d anchor = new Vector3d(((max.x() - min.x()) / 2), 0, ((max.z() - min.z()) / 2));
+
+                    Vector3d size = new Vector3d(max).sub(min);
+                    Box hitbox = new Box(new Vector3d(), size);
+
+                    BuilderToolsPlugin.addToQueue(
+                            playerComponent,
+                            playerRefComponent,
+                            (r, builderState, componentAccessor) -> {
+                                boolean created = mapperService.createBlockymodel(models, anchor, hitbox, data.pack, data.name, true, (item) -> {
+                                    playerRefComponent.getReference().getStore().getExternalData().getWorld().execute(() -> {
+                                        InventoryComponent.Hotbar inventory = componentAccessor.getComponent(r, InventoryComponent.Hotbar.getComponentType());
+                                        assert inventory != null;
+                                        inventory.getInventory().addItemStack(new ItemStack(HytaleService.get().createValidItemName(data.name)));
+                                        NotificationUtil.sendNotificationToUniverse(Message.translation("mcreator.ui.save.success").param("pack", data.pack), NotificationStyle.Success);
+                                    });
+                                });
+                            });
+                    break;
+                }
+
+                Vector3d max = new Vector3d(selection.getSelectionMax());
+                Vector3d min = new Vector3d(selection.getSelectionMin());
+
+                Vector3d selectionCenter = new Vector3d(min).add(max).div(2);
+
+                List<GroupService.EntityGroup<Model>> modelGroups = GroupService.get().createGroupsByPosAndNodeCount(models, data.maxGroupingDist);
                 int counter = 0;
-                for (GroupService.ModelGroup modelGroup : modelGroups) {
+                for (GroupService.EntityGroup<Model> modelGroup : modelGroups) {
                     String name = data.name + "_" + counter;
                     counter++;
                     BuilderToolsPlugin.addToQueue(
                             playerComponent,
                             playerRefComponent,
                             (r, builderState, componentAccessor) -> {
-                                Vector3d center = new Vector3d(modelGroup.center);
-                                center.y = MathUtil.floor(center.y());
-                                boolean created = mapperService.createBlockymodel(modelGroup.entities, center, data.pack, name, data.createItem, (item) -> {
+                                Vector3d modelCenter = new Vector3d(modelGroup.center.x(), modelGroup.min.y(), modelGroup.center.z());
+                                boolean created = mapperService.createBlockymodel(modelGroup.entities, modelCenter, modelGroup.getHitbox(), data.pack, name, data.createItem, (item) -> {
                                     playerRefComponent.getReference().getStore().getExternalData().getWorld().execute(() -> {
-                                        Vector3d pos = new Vector3d(selection.getX(), selection.getSelectionMin().y(), selection.getZ());
-                                        pos.add(center);
+                                        Vector3d pos = new Vector3d(selectionCenter.x(), min.y(), selectionCenter.z()).add(modelCenter).add(new Vector3d(-0.5, 0, 0));
+                                        Logger.get().severe("DEBUG GROUP " + name + " spawn pos: " + pos);
                                         if (data.autoReplace) {
                                             Ref<EntityStore> newRef = HytaleService.get().placeNewItem(pos, HytaleService.get().createValidItemName(name), playerRefComponent.getReference().getStore());
                                             snapshot.refs.put(name, newRef);
@@ -464,6 +502,16 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
                 commandBuilder.set("#BrowserPage.Visible", false);
                 commandBuilder.set("#MainPage.Visible", true);
                 this.sendUpdate(commandBuilder);
+                break;
+            }
+            case AutoGroupingChanged: {
+                UICommandBuilder commandBuilder = new UICommandBuilder();
+                commandBuilder.set("#SelectionView #CreateItem #CheckBox.Value", !data.checked);
+                commandBuilder.set("#SelectionView #CreateItem #CheckBox.Disabled", data.checked);
+                commandBuilder.set("#SelectionView #AutoReplace #CheckBox.Value", !data.checked);
+                commandBuilder.set("#SelectionView #AutoReplace #CheckBox.Disabled", data.checked);
+                this.sendUpdate(commandBuilder);
+                break;
             }
         }
     }
@@ -839,7 +887,8 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
             BrowserRootChanged,
             BrowserSearch,
             ConfirmBrowser,
-            CancelBrowser;
+            CancelBrowser,
+            AutoGroupingChanged;
 
             Action() {
             }
@@ -851,6 +900,7 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
         public static final String PACK = "@Pack";
         public static final String UUID = "UUID";
         public static final String CHECKED = "@Checked";
+        public static final String DISABLE_AUTO_GROUPING = "@DisableAutoGrouping";
         public static final String CREATE_ITEM = "@CreateItem";
         public static final String AUTO_GROUP = "@AutoGroup";
         public static final String AUTO_REPLACE = "@AutoReplace";
@@ -889,6 +939,8 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
                 .add()
                 .append(new KeyedCodec<>(BROWSER_SEARCH, Codec.STRING), (o, browserSearchStr) -> o.browserSearchStr = browserSearchStr, o -> o.browserSearchStr)
                 .add()
+                .append(new KeyedCodec<>(DISABLE_AUTO_GROUPING, Codec.BOOLEAN), (o, disableAutoGroup) -> o.disableAutoGroup = disableAutoGroup, o -> o.disableAutoGroup)
+                .add()
                 .build();
         public PageData.Action action;
         public String tab;
@@ -903,6 +955,7 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
         public String browserRootStr;
         public String browserSearchStr;
         public double maxGroupingDist;
+        public boolean disableAutoGroup;
 
         public PageData() {
         }

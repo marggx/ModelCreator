@@ -314,7 +314,7 @@ public class BlockymodelService {
             if (attachment.getModel() == null) {
                 Logger.get().severe("Attachment for model: " +  model.id() + " is null! Texture Name: " +  attachment.getTexture());
                 continue;
-            };
+            }
             BlockymodelBase blockymodelBase = this.loadBlockymodelBase(attachment.getModel());
             if (blockymodelBase == null) continue;
 
@@ -335,7 +335,7 @@ public class BlockymodelService {
             if (attachment.getModel() == null) {
                 Logger.get().severe("Attachment for model: " +  model.id() + " is null! Texture Name: " +  attachment.getTexture());
                 continue;
-            };
+            }
             BlockymodelBase blockymodelBase = this.loadBlockymodelBase(attachment.getModel());
             if (blockymodelBase == null) continue;
             counter += countNodes(blockymodelBase);

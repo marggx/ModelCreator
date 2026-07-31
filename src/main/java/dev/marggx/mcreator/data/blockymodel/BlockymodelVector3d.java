@@ -14,13 +14,13 @@ public class BlockymodelVector3d extends Vector3d {
     @Nonnull
     public static final BuilderCodec<BlockymodelVector3d> CODEC = BuilderCodec.builder(BlockymodelVector3d.class, BlockymodelVector3d::new)
             .metadata(UIDisplayMode.COMPACT)
-            .<Double>appendInherited(new KeyedCodec<>("x", Codec.DOUBLE, true, true), (o, i) -> o.x = i, o -> o.x, (o, p) -> o.x = p.x)
+            .appendInherited(new KeyedCodec<>("x", Codec.DOUBLE, true, true), (o, i) -> o.x = i, o -> o.x, (o, p) -> o.x = p.x)
             .addValidator(Validators.nonNull())
             .add()
-            .<Double>appendInherited(new KeyedCodec<>("y", Codec.DOUBLE, true, true), (o, i) -> o.y = i, o -> o.y, (o, p) -> o.y = p.y)
+            .appendInherited(new KeyedCodec<>("y", Codec.DOUBLE, true, true), (o, i) -> o.y = i, o -> o.y, (o, p) -> o.y = p.y)
             .addValidator(Validators.nonNull())
             .add()
-            .<Double>appendInherited(new KeyedCodec<>("z", Codec.DOUBLE, true, true), (o, i) -> o.z = i, o -> o.z, (o, p) -> o.z = p.z)
+            .appendInherited(new KeyedCodec<>("z", Codec.DOUBLE, true, true), (o, i) -> o.z = i, o -> o.z, (o, p) -> o.z = p.z)
             .addValidator(Validators.nonNull())
             .add()
             .build();

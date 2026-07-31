@@ -2,9 +2,12 @@ package dev.marggx.mcreator.services;
 
 import com.hypixel.hytale.builtin.buildertools.BuilderToolsPlugin;
 import com.hypixel.hytale.component.*;
+import com.hypixel.hytale.math.shape.Box;
 import com.hypixel.hytale.server.core.entity.UUIDComponent;
 import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.modules.entity.component.BoundingBox;
 import com.hypixel.hytale.server.core.modules.entity.component.EntityScaleComponent;
+import com.hypixel.hytale.server.core.modules.entity.component.ModelComponent;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.prefab.selection.standard.BlockSelection;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
@@ -19,6 +22,7 @@ import org.joml.Vector3d;
 
 import javax.annotation.Nonnull;
 import java.util.*;
+import java.util.function.Function;
 
 public class GroupService {
 
@@ -211,14 +215,14 @@ public class GroupService {
     }
 
     public void autoCreateGroupsBySelection(@Nonnull BlockSelection selection, @Nonnull Store<EntityStore> store) {
-        List<RefGroup> groups = createGroupsByPosAndNodeCount(selection, store, null);
-        for (RefGroup group : groups) {
+        List<EntityGroup<Ref<EntityStore>>> groups = createGroupsByPosAndNodeCount(selection, store, null);
+        for (EntityGroup<Ref<EntityStore>> group : groups) {
             this.createAndJoinGroup(group.entities, store, null);
         }
     }
 
-    public List<RefGroup> createGroupsByPosAndNodeCount(@Nonnull BlockSelection selection, @Nonnull Store<EntityStore> store, Double maxDist) {
-        List<RefGroup> groups = new ObjectArrayList<>();
+    public List<EntityGroup<Ref<EntityStore>>> createGroupsByPosAndNodeCount(@Nonnull BlockSelection selection, @Nonnull Store<EntityStore> store, Double maxDist) {
+        List<EntityGroup<Ref<EntityStore>>> groups = new ObjectArrayList<>();
         List<Ref<EntityStore>> refs = HytaleService.get().getRefsFromBlockSelection(selection, store);
         Set<Ref<EntityStore>> used = new HashSet<>();
 
@@ -232,7 +236,10 @@ public class GroupService {
                 continue;
             }
 
-            RefGroup group = new RefGroup(starter, store, maxDist != null ? maxDist : MAX_DIST_FOR_AUTO_GROUPS);
+            EntityGroup<Ref<EntityStore>> group = new EntityGroup<>(starter, maxDist != null ? maxDist : MAX_DIST_FOR_AUTO_GROUPS,
+                    ref -> getEntityPos(ref, store),
+                    ref -> getModelHitBox(ref, store),
+                    ref -> getBlockyNodeCount(ref, store));
             used.add(starter);
 
             boolean changed;
@@ -245,7 +252,7 @@ public class GroupService {
                         continue;
                     }
 
-                    if (group.tryAddMember(ref, store)) {
+                    if (group.tryAddMember(ref)) {
                         used.add(ref);
                         changed = true;
                     }
@@ -258,8 +265,8 @@ public class GroupService {
         return groups;
     }
 
-    public List<ModelGroup> createGroupsByPosAndNodeCount(@Nonnull List<Model> models, Double maxDist) {
-        List<ModelGroup> groups = new ObjectArrayList<>();
+    public List<EntityGroup<Model>> createGroupsByPosAndNodeCount(@Nonnull List<Model> models, Double maxDist) {
+        List<EntityGroup<Model>> groups = new ObjectArrayList<>();
         Set<Model> used = new HashSet<>();
 
         models.sort(Comparator.comparingDouble(model -> {
@@ -272,7 +279,10 @@ public class GroupService {
                 continue;
             }
 
-            ModelGroup group = new ModelGroup(starter, maxDist != null ? maxDist : MAX_DIST_FOR_AUTO_GROUPS);
+            EntityGroup<Model> group = new EntityGroup<>(starter, maxDist != null ? maxDist : MAX_DIST_FOR_AUTO_GROUPS,
+                    model -> getEntityPos(model.holder()),
+                    model -> getModelHitBox(model.holder()),
+                    model -> getBlockyNodeCount(model.holder()));
             used.add(starter);
 
             boolean changed;
@@ -312,99 +322,155 @@ public class GroupService {
         return new Vector3d(transformComponent.getPosition());
     }
 
-    public class RefGroup {
-        public List<Ref<EntityStore>> entities = new ObjectArrayList<>();
-        public final Vector3d center = new Vector3d();
-        private final Vector3d tmp = new Vector3d();
-        private final double maxDist;
-        public int blockyNodeCount = 0;
-
-        public RefGroup(Ref<EntityStore> firstRef, Store<EntityStore> store, double maxDist) {
-            center.set(getEntityPos(firstRef, store));
-            entities.add(firstRef);
-            blockyNodeCount += getBlockyNodeCount(firstRef, store);
-            this.maxDist = maxDist;
+    private Box getModelHitBox(Ref<EntityStore> entityRef, Store<EntityStore> store) {
+        BoundingBox boundingBox = store.getComponent(entityRef, BoundingBox.getComponentType());
+        if (boundingBox == null) {
+            return null;
         }
+        Box box = boundingBox.getBoundingBox();
 
-        public boolean tryAddMember(@Nonnull Ref<EntityStore> entityRef, @Nonnull Store<EntityStore> store) {
-            Vector3d pos = getEntityPos(entityRef, store);
-            boolean inRange = center.distance(pos) <= maxDist;
-
-            if (!inRange) {
-                return false;
+        double scale;
+        EntityScaleComponent scaleComp = store.getComponent(entityRef, EntityScaleComponent.getComponentType());
+        if (scaleComp == null) {
+            ModelComponent modelComp = store.getComponent(entityRef, ModelComponent.getComponentType());
+            if (modelComp == null) {
+                return box;
             }
-
-            int memberNodeCount = getBlockyNodeCount(entityRef, store);
-
-            boolean nodesExceedLimit = (memberNodeCount + blockyNodeCount) > (HytaleService.NODE_LIMIT - entities.size() - 1);
-
-            if (nodesExceedLimit) {
-                return false;
-            }
-
-            blockyNodeCount += memberNodeCount;
-
-            entities.add(entityRef);
-
-            pos.sub(center, tmp);
-            center.fma(1.0 / entities.size(), tmp);
-            return true;
+            scale = modelComp.getModel().getScale() / 2;
+        } else {
+            scale = scaleComp.getScale() / 2;
         }
 
-        private int getBlockyNodeCount(Ref<EntityStore> ref, Store<EntityStore> store) {
-            Model model = blockymodelService.loadModelFromHolder(store.copyEntity(ref));
-            BlockymodelBase blockymodelBase = blockymodelService.loadBlockymodelBase(model.path());
-            int count = blockymodelService.countNodes(blockymodelBase);
-            count += blockymodelService.countAttachmentsNodes(model);
-            return count;
-        }
+        Vector3d min = new Vector3d(box.getMin());
+        Vector3d max = new Vector3d(box.getMax());
+        min.mul(scale);
+        max.mul(scale);
+
+        return new Box(min, max);
     }
 
-    public class ModelGroup {
-        public List<Model> entities = new ObjectArrayList<>();
+    private Box getModelHitBox(Holder<EntityStore> holder) {
+        BoundingBox boundingBox = holder.getComponent(BoundingBox.getComponentType());
+        if (boundingBox == null) {
+            return null;
+        }
+        Box box = boundingBox.getBoundingBox();
+
+        double scale;
+        EntityScaleComponent scaleComp = holder.getComponent(EntityScaleComponent.getComponentType());
+        if (scaleComp == null) {
+            ModelComponent modelComp = holder.getComponent(ModelComponent.getComponentType());
+            if (modelComp == null) {
+                return box;
+            }
+            scale = modelComp.getModel().getScale() / 2;
+        } else {
+            scale = scaleComp.getScale() / 2;
+        }
+
+        Vector3d min = new Vector3d(box.getMin());
+        Vector3d max = new Vector3d(box.getMax());
+        min.mul(scale);
+        max.mul(scale);
+
+        return new Box(min, max);
+    }
+
+    private int getBlockyNodeCount(Ref<EntityStore> ref, Store<EntityStore> store) {
+        Model model = blockymodelService.loadModelFromHolder(store.copyEntity(ref));
+        BlockymodelBase blockymodelBase = blockymodelService.loadBlockymodelBase(model.path());
+        int count = blockymodelService.countNodes(blockymodelBase);
+        count += blockymodelService.countAttachmentsNodes(model);
+        return count;
+    }
+
+    private int getBlockyNodeCount(Holder<EntityStore> holder) {
+        Model model = blockymodelService.loadModelFromHolder(holder);
+        BlockymodelBase blockymodelBase = blockymodelService.loadBlockymodelBase(model.path());
+        int count = blockymodelService.countNodes(blockymodelBase);
+        count += blockymodelService.countAttachmentsNodes(model);
+        return count;
+    }
+
+    public static class EntityGroup<T> {
+        public List<T> entities = new ObjectArrayList<>();
         public final Vector3d center = new Vector3d();
         private final Vector3d tmp = new Vector3d();
         private final double maxDist;
         public int blockyNodeCount = 0;
+        public final Vector3d min = new Vector3d();
+        public final Vector3d max = new Vector3d();
 
-        public ModelGroup(Model firstModel, double maxDist) {
-            center.set(getEntityPos(firstModel.holder()));
-            entities.add(firstModel);
-            blockyNodeCount += getBlockyNodeCount(firstModel.holder());
+        private final Function<T, Vector3d> posFn;
+        private final Function<T, Box> hitBoxFn;
+        private final Function<T, Integer> nodeCountFn;
+
+        public EntityGroup(T first, double maxDist,
+                           Function<T, Vector3d> posFn,
+                           Function<T, Box> hitBoxFn,
+                           Function<T, Integer> nodeCountFn) {
+            this.posFn = posFn;
+            this.hitBoxFn = hitBoxFn;
+            this.nodeCountFn = nodeCountFn;
             this.maxDist = maxDist;
+
+            Vector3d pos = posFn.apply(first);
+            Box hitBox = hitBoxFn.apply(first);
+
+            center.set(pos);
+            if (hitBox != null) {
+                min.set(pos).add(hitBox.getMin());
+                max.set(pos).add(hitBox.getMax());
+            } else {
+                min.set(pos);
+                max.set(pos);
+            }
+
+            entities.add(first);
+            blockyNodeCount += nodeCountFn.apply(first);
         }
 
-        public boolean tryAddMember(@Nonnull Model model) {
-            Vector3d pos = getEntityPos(model.holder());
-            boolean inRange = center.distance(pos) <= maxDist;
+        public boolean tryAddMember(T entity) {
+            Vector3d pos = posFn.apply(entity);
 
-            if (!inRange) {
+            Vector3d entityCenter = new Vector3d(pos);
+            Box hitBox = hitBoxFn.apply(entity);
+
+            if (center.distance(pos) > maxDist) {
                 return false;
             }
 
-            int memberNodeCount = getBlockyNodeCount(model.holder());
+            int memberNodeCount = nodeCountFn.apply(entity);
 
-            boolean nodesExceedLimit = (memberNodeCount + blockyNodeCount) > (HytaleService.NODE_LIMIT - entities.size() - 1);
-
-            if (nodesExceedLimit) {
+            if ((memberNodeCount + blockyNodeCount) > (HytaleService.NODE_LIMIT - entities.size() - 1)) {
                 return false;
             }
 
             blockyNodeCount += memberNodeCount;
+            entities.add(entity);
 
-            entities.add(model);
+            Vector3d entityMin = new Vector3d(pos);
+            Vector3d entityMax = new Vector3d(pos);
+            if (hitBox != null) {
+                entityMin.add(hitBox.getMin());
+                entityMax.add(hitBox.getMax());
+            }
+            min.min(entityMin);
+            max.max(entityMax);
 
-            pos.sub(center, tmp);
+            entityCenter.sub(center, tmp);
             center.fma(1.0 / entities.size(), tmp);
             return true;
         }
 
-        private int getBlockyNodeCount(Holder<EntityStore> holder) {
-            Model model = blockymodelService.loadModelFromHolder(holder);
-            BlockymodelBase blockymodelBase = blockymodelService.loadBlockymodelBase(model.path());
-            int count = blockymodelService.countNodes(blockymodelBase);
-            count += blockymodelService.countAttachmentsNodes(model);
-            return count;
+        public Box getHitbox() {
+            Vector3d minRelative = new Vector3d(min).sub(center);
+            Vector3d maxRelative = new Vector3d(max).sub(center);
+            return new Box(new Vector3d(0, 0, 0), new Vector3d(maxRelative).sub(minRelative));
+        }
+
+        public Vector3d getCenter() {
+            return new Vector3d(max).sub(min).div(2.0);
         }
     }
 }

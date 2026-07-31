@@ -30,7 +30,6 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import dev.marggx.mcreator.components.GroupComponent;
 import dev.marggx.mcreator.components.GroupMembershipComponent;
-import dev.marggx.mcreator.services.GroupService;
 import dev.marggx.mcreator.utils.Logger;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 import org.joml.Vector3d;
@@ -40,7 +39,7 @@ import javax.annotation.Nonnull;
 public class EditPage extends InteractiveCustomUIPage<EditPage.PageData> {
     private static final Logger LOGGER = Logger.get();
 
-    private Ref<EntityStore> entityRef;
+    private final Ref<EntityStore> entityRef;
     private TransformComponent originalTransform;
     private TransformComponent transform;
     private HeadRotation headRotation;

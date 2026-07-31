@@ -115,6 +115,14 @@ $C.@PageOverlay #MainPage {
               }
             }
           }
+          Group #DisableAutoGrouping {
+            LayoutMode: Left;
+            Anchor: (Height: 35, Bottom: 16);
+            $C.@CheckBoxWithLabel {
+              @Text = %mcreator.ui.save.disableAutoGrouping;
+              @Checked = false;
+            }
+          }
           Group #Pack {
             LayoutMode: Left;
             Anchor: (Height: 35, Bottom: 16);
