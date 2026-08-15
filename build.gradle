@@ -5,7 +5,7 @@ plugins {
 
 import org.gradle.internal.os.OperatingSystem
 
-patchline = "release"
+patchline = "pre-release"
 
 ext {
     if (project.hasProperty('hytale_home')) {

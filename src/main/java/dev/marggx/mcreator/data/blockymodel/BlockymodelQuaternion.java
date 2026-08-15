@@ -3,8 +3,10 @@ package dev.marggx.mcreator.data.blockymodel;
 import com.hypixel.hytale.codec.Codec;
 import com.hypixel.hytale.codec.KeyedCodec;
 import com.hypixel.hytale.codec.builder.BuilderCodec;
+import com.hypixel.hytale.math.util.TrigMathUtil;
 import com.hypixel.hytale.math.vector.Rotation3f;
 import org.joml.Quaterniond;
+import org.joml.Quaterniondc;
 import org.joml.Vector3d;
 
 import javax.annotation.Nonnull;
@@ -37,26 +39,26 @@ public class BlockymodelQuaternion {
         this.w = w;
     }
 
-    public static BlockymodelQuaternion fromRotation3f(Rotation3f rot) {
-        Vector3d rotV3 = new Vector3d(rot.x(), rot.y(), rot.z());
-        rotV3.rotateY((float) Math.PI);
+    public BlockymodelQuaternion(Quaterniondc quad) {
+        this.x = quad.x();
+        this.y = quad.y();
+        this.z = quad.z();
+        this.w = quad.w();
+    }
 
-        Quaterniond quat = new Quaterniond().rotationYXZ(rotV3.y(), rotV3.x(), rotV3.z());
-        return new BlockymodelQuaternion(quat.x(), quat.y(), quat.z(), quat.w());
+    public static Quaterniond fromVector3d(Vector3d rot) {
+        return new Quaterniond().rotationYXZ(rot.y(), rot.x(), rot.z());
     }
 
 
-    public static BlockymodelQuaternion getLocalQuat(Rotation3f baseRotation, Rotation3f toLocalRotation) {
-        Vector3d baseOrientation = new Vector3d(baseRotation.x(), baseRotation.y(), baseRotation.z());
-        baseOrientation.rotateY((float) Math.PI);
-
+    public static BlockymodelQuaternion getLocalQuat(Quaterniond baseQuad, Rotation3f toLocalRotation) {
         Vector3d toLocal = new Vector3d(toLocalRotation.x(), toLocalRotation.y(), toLocalRotation.z());
-        toLocal.rotateY((float) Math.PI);
+        toLocal.rotateY(TrigMathUtil.PI);
 
-        Quaterniond originalQuat = new Quaterniond().rotationYXZ(baseOrientation.y(), baseOrientation.x(), baseOrientation.z());
+        Quaterniond originalQuat = new Quaterniond(baseQuad);
         originalQuat.invert();
-        Quaterniond toLocalQuat = new Quaterniond().rotationYXZ(toLocal.y(), toLocal.x(), toLocal.z());
-        Quaterniond result = originalQuat.mul(toLocalQuat);
-        return new BlockymodelQuaternion(result.x(), result.y(), result.z(), result.w());
+        Quaterniond toLocalQuat = BlockymodelQuaternion.fromVector3d(toLocal);
+        originalQuat.mul(toLocalQuat);
+        return new BlockymodelQuaternion(originalQuat);
     }
 }

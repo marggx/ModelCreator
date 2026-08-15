@@ -5,6 +5,7 @@ import com.hypixel.hytale.builtin.buildertools.BuilderToolsPlugin;
 import com.hypixel.hytale.builtin.buildertools.prefabeditor.PrefabEditSessionManager;
 import com.hypixel.hytale.builtin.buildertools.prefabeditor.enums.PrefabRootDirectory;
 import com.hypixel.hytale.builtin.buildertools.prefablist.AssetPrefabFileProvider;
+import com.hypixel.hytale.builtin.path.entities.PatrolPathMarkerEntity;
 import com.hypixel.hytale.codec.Codec;
 import com.hypixel.hytale.codec.KeyedCodec;
 import com.hypixel.hytale.codec.builder.BuilderCodec;
@@ -45,6 +46,7 @@ import com.hypixel.hytale.server.core.universe.world.chunk.BlockChunk;
 import com.hypixel.hytale.server.core.universe.world.chunk.WorldChunk;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.core.util.NotificationUtil;
+import com.hypixel.hytale.server.npc.entities.NPCEntity;
 import dev.marggx.mcreator.data.extras.Model;
 import dev.marggx.mcreator.services.GroupService;
 import dev.marggx.mcreator.services.HytaleService;
@@ -118,6 +120,7 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
             return;
         }
 
+        unselectNpc();
         setupBasedOnModel("#PrefabView", uiCommandBuilder, uiEventBuilder);
         setupBasedOnModel("#SelectionView", uiCommandBuilder, uiEventBuilder);
         if (isPrefab) {
@@ -212,7 +215,7 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
         int counter = 0;
         List<Model> models = tab.equals("#PrefabView") ? modelsPrefab : modelsSelection;
         List<Model> unselected = tab.equals("#PrefabView") ? unselectedModelsPrefab : unselectedModelsSelection;
-        if (models.isEmpty()) {
+        if (models.isEmpty() && unselected.isEmpty()) {
             uiCBuilder.set(tab + " #SelectedEntities #Label.Text", Message.translation("mcreator.ui.save.selectedEntitiesLabel").param("count", 0));
             return;
         }
@@ -266,6 +269,28 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
         uiCommandBuilder.set("#PrefabNotification.Text", "");
         uiCommandBuilder.set("#PrefabNotification.Visible", false);
         uiCommandBuilder.set("#PrefabView #GenerateButton.Disabled", false);
+    }
+
+    private void unselectNpc() {
+        if (NPCEntity.getComponentType() == null || PatrolPathMarkerEntity.getComponentType() == null) {
+            return;
+        }
+        List<Model> models = isPrefab ? modelsPrefab : modelsSelection;
+        List<Model> unselectedModels = isPrefab ? unselectedModelsPrefab : unselectedModelsSelection;
+        for (int i = models.size() - 1; i >= 0; i--) {
+            Model model = models.get(i);
+            NPCEntity npc = model.holder().getComponent(NPCEntity.getComponentType());
+            if (npc != null) {
+                models.remove(i);
+                unselectedModels.add(model);
+                continue;
+            }
+            PatrolPathMarkerEntity npcPath = model.holder().getComponent(PatrolPathMarkerEntity.getComponentType());
+            if (npcPath != null) {
+                models.remove(i);
+                unselectedModels.add(model);
+            }
+        }
     }
 
     public void handleDataEvent(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, @Nonnull PageData data) {
@@ -348,7 +373,7 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
 
                 BlockyReplacementSnapshot snapshot = new BlockyReplacementSnapshot(null, null);
                 if (data.autoReplace) {
-                    snapshot.holders = HytaleService.get().removeEntitiesInSelection(selection, store);
+                    snapshot.holders = HytaleService.get().removeEntitiesInSelection(selection, store, models);
                     BuilderToolsPlugin.getState(playerComponent, playerRef).pushHistory(MCreatorActions.BLOCKY_REPLACEMENT_SNAPSHOT, snapshot);
                 }
                 if (data.disableAutoGroup) {
@@ -365,11 +390,8 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
                             playerComponent,
                             playerRefComponent,
                             (r, builderState, componentAccessor) -> {
-                                boolean created = mapperService.createBlockymodel(models, anchor, hitbox, data.pack, data.name, true, (item) -> {
+                                boolean created = mapperService.createBlockymodel(models, anchor, hitbox, data.pack, data.name, false, (item) -> {
                                     playerRefComponent.getReference().getStore().getExternalData().getWorld().execute(() -> {
-                                        InventoryComponent.Hotbar inventory = componentAccessor.getComponent(r, InventoryComponent.Hotbar.getComponentType());
-                                        assert inventory != null;
-                                        inventory.getInventory().addItemStack(new ItemStack(HytaleService.get().createValidItemName(data.name)));
                                         NotificationUtil.sendNotificationToUniverse(Message.translation("mcreator.ui.save.success").param("pack", data.pack), NotificationStyle.Success);
                                     });
                                 });
@@ -377,25 +399,21 @@ public class SavePage extends InteractiveCustomUIPage<SavePage.PageData> {
                     break;
                 }
 
-                Vector3d max = new Vector3d(selection.getSelectionMax());
-                Vector3d min = new Vector3d(selection.getSelectionMin());
-
-                Vector3d selectionCenter = new Vector3d(min).add(max).div(2);
+                Vector3d selectionPos = new Vector3d(selection.getX(), selection.getY() + 0.5, selection.getZ());
 
                 List<GroupService.EntityGroup<Model>> modelGroups = GroupService.get().createGroupsByPosAndNodeCount(models, data.maxGroupingDist);
                 int counter = 0;
                 for (GroupService.EntityGroup<Model> modelGroup : modelGroups) {
-                    String name = data.name + "_" + counter;
+                    String name = data.name + "_A" + counter;
                     counter++;
                     BuilderToolsPlugin.addToQueue(
                             playerComponent,
                             playerRefComponent,
                             (r, builderState, componentAccessor) -> {
-                                Vector3d modelCenter = new Vector3d(modelGroup.center.x(), modelGroup.min.y(), modelGroup.center.z());
+                                Vector3d modelCenter = new Vector3d(modelGroup.max.x(), modelGroup.min.y(), modelGroup.max.z());
                                 boolean created = mapperService.createBlockymodel(modelGroup.entities, modelCenter, modelGroup.getHitbox(), data.pack, name, data.createItem, (item) -> {
                                     playerRefComponent.getReference().getStore().getExternalData().getWorld().execute(() -> {
-                                        Vector3d pos = new Vector3d(selectionCenter.x(), min.y(), selectionCenter.z()).add(modelCenter).add(new Vector3d(-0.5, 0, 0));
-                                        Logger.get().severe("DEBUG GROUP " + name + " spawn pos: " + pos);
+                                        Vector3d pos = new Vector3d(selectionPos).add(modelCenter);
                                         if (data.autoReplace) {
                                             Ref<EntityStore> newRef = HytaleService.get().placeNewItem(pos, HytaleService.get().createValidItemName(name), playerRefComponent.getReference().getStore());
                                             snapshot.refs.put(name, newRef);

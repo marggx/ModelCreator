@@ -9,6 +9,7 @@ import com.hypixel.hytale.server.core.modules.entity.component.BoundingBox;
 import com.hypixel.hytale.server.core.modules.entity.component.EntityScaleComponent;
 import com.hypixel.hytale.server.core.modules.entity.component.ModelComponent;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
+import com.hypixel.hytale.server.core.modules.entity.item.ItemComponent;
 import com.hypixel.hytale.server.core.prefab.selection.standard.BlockSelection;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
@@ -166,7 +167,7 @@ public class GroupService {
                         assert memberTransformComponent != null;
 
                         memberTransformComponent.getPosition().sub(diff);
-                        memberTransformComponent.markChunkDirty(componentAccessor);
+                        //memberTransformComponent.markChunkDirty(componentAccessor);
                     }, targetRef);
                 });
     }
@@ -331,14 +332,17 @@ public class GroupService {
 
         double scale;
         EntityScaleComponent scaleComp = store.getComponent(entityRef, EntityScaleComponent.getComponentType());
+        ItemComponent itemComp = store.getComponent(entityRef, ItemComponent.getComponentType());
         if (scaleComp == null) {
             ModelComponent modelComp = store.getComponent(entityRef, ModelComponent.getComponentType());
             if (modelComp == null) {
                 return box;
             }
             scale = modelComp.getModel().getScale() / 2;
+        } else if (itemComp != null && itemComp.getItemStack() != null && itemComp.getItemStack().getBlockKey() == null) {
+            scale = scaleComp.getScale() / 2.5;
         } else {
-            scale = scaleComp.getScale() / 2;
+            scale = scaleComp.getScale();
         }
 
         Vector3d min = new Vector3d(box.getMin());
@@ -358,14 +362,17 @@ public class GroupService {
 
         double scale;
         EntityScaleComponent scaleComp = holder.getComponent(EntityScaleComponent.getComponentType());
+        ItemComponent itemComp = holder.getComponent(ItemComponent.getComponentType());
         if (scaleComp == null) {
             ModelComponent modelComp = holder.getComponent(ModelComponent.getComponentType());
             if (modelComp == null) {
                 return box;
             }
             scale = modelComp.getModel().getScale() / 2;
+        } else if (itemComp != null && itemComp.getItemStack() != null && itemComp.getItemStack().getBlockKey() == null) {
+            scale = scaleComp.getScale() / 2.5;
         } else {
-            scale = scaleComp.getScale() / 2;
+            scale = scaleComp.getScale();
         }
 
         Vector3d min = new Vector3d(box.getMin());
@@ -470,7 +477,8 @@ public class GroupService {
         }
 
         public Vector3d getCenter() {
-            return new Vector3d(max).sub(min).div(2.0);
+            Vector3d center = new Vector3d(max).sub(min).div(2);
+            return center;
         }
     }
 }
