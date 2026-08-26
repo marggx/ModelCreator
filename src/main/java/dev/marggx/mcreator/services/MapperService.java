@@ -130,12 +130,10 @@ public class MapperService {
             blockymodelService.addAttachments(model, base);
         }
 
-
         handleHeadRotation(orientation, model, holder, blockymodelBase);
 
         BlockymodelVector3d offset;
         offset = BlockymodelVector3d.from(new Vector3d(0, -16.0, 0));
-        //boolean hasTransformRotation = hasTransformRotation(model, headRotation, transform);
         handlePosition(base, position);
         handleScale(base, model, holder, blockymodelBase, offset, position);
 

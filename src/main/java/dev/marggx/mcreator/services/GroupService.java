@@ -471,9 +471,13 @@ public class GroupService {
         }
 
         public Box getHitbox() {
+            Vector3d fullBlockMin = new Vector3d(min).ceil();
+            fullBlockMin.sub(min);
+            fullBlockMin.div(2);
+
             Vector3d minRelative = new Vector3d(min).sub(center);
             Vector3d maxRelative = new Vector3d(max).sub(center);
-            return new Box(new Vector3d(0, 0, 0), new Vector3d(maxRelative).sub(minRelative));
+            return new Box(new Vector3d(0, 0, 0).add(fullBlockMin), new Vector3d(maxRelative).sub(minRelative).add(fullBlockMin));
         }
 
         public Vector3d getCenter() {
