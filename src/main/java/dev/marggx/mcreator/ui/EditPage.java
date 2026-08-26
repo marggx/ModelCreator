@@ -243,7 +243,7 @@ public class EditPage extends InteractiveCustomUIPage<EditPage.PageData> {
                     assert memberTransformComponent != null;
 
                     memberTransformComponent.getPosition().sub(posDiff);
-                    memberTransformComponent.markChunkDirty(store);
+                    //memberTransformComponent.markChunkDirty(store);
                 }, entityRef);
             }
         }

@@ -12,10 +12,7 @@ import com.hypixel.hytale.server.core.asset.type.item.config.Item;
 import com.hypixel.hytale.server.core.entity.UUIDComponent;
 import com.hypixel.hytale.server.core.entity.entities.BlockEntity;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
-import com.hypixel.hytale.server.core.modules.entity.component.EntityScaleComponent;
-import com.hypixel.hytale.server.core.modules.entity.component.HeadRotation;
-import com.hypixel.hytale.server.core.modules.entity.component.PropComponent;
-import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
+import com.hypixel.hytale.server.core.modules.entity.component.*;
 import com.hypixel.hytale.server.core.modules.entity.item.ItemComponent;
 import com.hypixel.hytale.server.core.modules.entity.item.PreventItemMerging;
 import com.hypixel.hytale.server.core.modules.entity.item.PreventPickup;
@@ -131,7 +128,7 @@ public class HytaleService {
 
             BlockymodelVector3d position = BlockymodelVector3d.from(transform.getPosition());
             HeadRotation headRotation = holder.getComponent(HeadRotation.getComponentType());
-            Rotation3f rotationVector = MapperService.get().createRotationVector(model, headRotation, transform);
+            Vector3d rotationVector = MapperService.get().createRotationVector(model, headRotation, transform);
             String cacheKey = model.id() + position + rotationVector;
             if (modelCache.containsKey(cacheKey)) {
                 continue;
@@ -255,15 +252,28 @@ public class HytaleService {
     }
 
     public void replaceEntitiesWithNewItem(Vector3d pos, String modelId, BlockSelection selection, Store<EntityStore> store) {
-        this.removeEntitiesInSelection(selection, store);
+        this.removeEntitiesInSelection(selection, store, null);
         this.placeNewItem(pos, modelId, store);
     }
 
-    public List<Holder<EntityStore>> removeEntitiesInSelection(BlockSelection selection, Store<EntityStore> store) {
+    public List<Holder<EntityStore>> removeEntitiesInSelection(BlockSelection selection, Store<EntityStore> store, List<Model> modelsToFilter) {
         List<Ref<EntityStore>> refs = this.getRefsFromBlockSelection(selection, store);
         List<Holder<EntityStore>> holders = new ObjectArrayList<>();
         for (Ref<EntityStore> ref : refs) {
-            holders.add(store.removeEntity(ref, RemoveReason.REMOVE));
+            if (modelsToFilter != null) {
+                UUIDComponent uuid = store.getComponent(ref, UUIDComponent.getComponentType());
+                assert uuid != null;
+                String uuiString = uuid.getUuid().toString();
+                for (Model model : modelsToFilter) {
+                    UUIDComponent uuidModel = model.holder().getComponent(UUIDComponent.getComponentType());
+                    if (uuidModel != null && uuidModel.getUuid().toString().equals(uuiString)) {
+                        holders.add(store.removeEntity(ref, RemoveReason.REMOVE));
+                        break;
+                    }
+                }
+            } else {
+                holders.add(store.removeEntity(ref, RemoveReason.REMOVE));
+            }
         }
         return holders;
     }
@@ -272,7 +282,7 @@ public class HytaleService {
         Holder<EntityStore> holder = store.getRegistry().newHolder();
         holder.addComponent(BlockEntity.getComponentType(), new BlockEntity(modelId));
         holder.addComponent(TransformComponent.getComponentType(), new TransformComponent(pos, new Rotation3f()));
-        holder.addComponent(EntityScaleComponent.getComponentType(), new EntityScaleComponent(2.0F));
+        holder.addComponent(EntityScaleComponent.getComponentType(), new EntityScaleComponent(1.0F));
         ItemStack itemStack = new ItemStack(modelId, 1);
         itemStack.setOverrideDroppedItemAnimation(true);
         holder.addComponent(ItemComponent.getComponentType(), new ItemComponent(itemStack));

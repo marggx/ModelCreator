@@ -114,7 +114,7 @@ public class BlockymodelService {
         List<Blockymodel> blockymodels = model.blockymodels();
         if (blockymodels.isEmpty()) return null;
 
-        return new BlockymodelBase(null, blockymodels.toArray(Blockymodel[]::new));
+        return new BlockymodelBase("prop", blockymodels.toArray(Blockymodel[]::new));
     }
 
     public boolean saveBlockymodelBase(BaseModel base) {
