@@ -2,7 +2,6 @@ package dev.marggx.mcreator.services;
 
 import com.hypixel.hytale.component.Holder;
 import com.hypixel.hytale.math.shape.Box;
-import com.hypixel.hytale.math.util.MathUtil;
 import com.hypixel.hytale.math.util.TrigMathUtil;
 import com.hypixel.hytale.server.core.HytaleServer;
 import com.hypixel.hytale.server.core.asset.type.item.config.Item;
